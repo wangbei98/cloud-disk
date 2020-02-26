@@ -12,6 +12,7 @@ flask-wtf = "*"
 wtforms = "*"
 flask-restful = "*"
 hdfs = "*"
+python-dotenv = "*"
 
 [requires]
 python_version = "3.6"
