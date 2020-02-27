@@ -13,6 +13,7 @@ wtforms = "*"
 flask-restful = "*"
 hdfs = "*"
 python-dotenv = "*"
+gunicorn = "*"
 
 [requires]
 python_version = "3.6"
