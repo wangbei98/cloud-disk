@@ -4,14 +4,16 @@ import json
 import click
 import datetime, time
 from flask import Flask
-from flask import redirect, url_for, abort, render_template, flash,request,send_file
+from flask import redirect, url_for, abort, render_template, flash,request,send_file,abort,jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
 from wtforms import SubmitField, TextAreaField
 from wtforms.validators import DataRequired
 from flask import jsonify
-from flask_restful import Api,Resource,fields,marshal_with,marshal_with_field
 import hdfs
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_restful import Api,Resource,fields,marshal_with,marshal_with_field,reqparse
+from flask_login import LoginManager,UserMixin,login_user, logout_user, current_user, login_required
 
 # SQLite URI compatiblec
 WIN = sys.platform.startswith('win')
@@ -28,6 +30,7 @@ def index():
 
 # restful api
 api = Api(app)
+login = LoginManager(app)
 
 # app.jinja_env.trim_blocks = True
 # app.jinja_env.lstrip_blocks = True
@@ -41,13 +44,12 @@ app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path,'upload')
 
 db = SQLAlchemy(app)
 # hdfs client
-hdfs_client = hdfs.Client("http://116.62.177.146:50070")
+# hdfs_client = hdfs.Client("http://116.62.177.146:50070")
 
 # handlers
 @app.shell_context_processor
 def make_shell_context():
-    return dict(db=db, FileNode=FileNode)
-
+    return dict(db=db, FileNode=FileNode,UserTable=UserTable)
 
 @app.cli.command()
 @click.option('--drop', is_flag=True, help='Create after drop.')
@@ -58,12 +60,13 @@ def initdb(drop):
         click.echo('Drop tables')
     db.create_all()
     # 在数据库中存储一个默认根目录 root  id = 0
-    root = FileNode(path='',name='root',isFolder=True,children='')
-    db.session.add(root)
+    root_of_default_user = FileNode(id = 0,name='root',path_root='/',parent_id=-1,is_folder=True)
+    # 创建 管理员
+    default_user = UserTable(user_id=0, email='beiwang121@163.com',password_hash = generate_password_hash('123456'))
+    db.session.add(root_of_default_user)
+    db.session.add(default_user)
     db.session.commit()
     click.echo('Initialized database.')
-
-
 # utils
 # 处理文件名
 import hashlib
@@ -94,36 +97,19 @@ def base36_encode(number):
 
 # Models
 class FileNode(db.Model):
-    path = db.Column(db.String(200),primary_key=True,default='')
-    name = db.Column(db.String(32),primary_key=True)
-    isFolder = db.Column(db.Boolean,default=True)
-    children = db.Column(db.Text,default='')
+    # 基本信息
+    id = db.Column(db.Integer,primary_key=True)
+    name = db.Column(db.String(50))
+    path_root = db.Column(db.String(200))
+    parent_id = db.Column(db.Integer,default = 0)
+    is_folder = db.Column(db.Boolean,default=True)
 
+    # 所属用户
+    user_id = db.Column(db.Integer,default=0)
+
+    # hdfs 相关
     hdfs_path = db.Column(db.String(50))
     hdfs_filename = db.Column(db.String(100))
-
-# class Folder(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     folder_name = db.Column(db.Text,unique=True)
-#     # TODO : 用双亲表示法 表示目录之间的包含关系
-#     parent_folder_id = db.Column(db.Integer)
-#     files = db.relationship('File',uselist=True,back_populates = 'folder')
-#     # optional
-#     def __repr__(self):
-#         return '<Folder %r>' % self.name
-
-# '''folder 与 folder 之间通过 parent_folder_id 相关联'''
-# '''folder 与 file 通过 db.relationship 相关联'''
-
-# class File(db.Model):
-#     id = db.Column(db.Integer,primary_key=True)
-#     folder_id = db.Column(db.Integer,db.ForeignKey('folder.id'))
-#     file_name = db.Column(db.Text)
-#     folder = db.relationship('Folder',uselist=False,back_populates='files')
-
-#     # optional
-#     def __repr__(self):
-#         return '<File %r>' % self.file_name
 
 def get_parent_path(full_path):
     splited_path = full_path.split('/')
@@ -306,7 +292,7 @@ class FilesView(Resource):
         # 生成文件名的 hash
         actual_filename = generate_file_name(path,file_name)
         # 结合 UPLOAD_FOLDER 得到最终文件的存储路径
-        # target_file = os.path.join(os.path.expanduser(app.config['UPLOAD_FOLDER']), actual_filename)
+        target_file = os.path.join(os.path.expanduser(app.config['UPLOAD_FOLDER']), actual_filename)
         try:
             # 获得当前 文件对象
             file = FileNode.query.filter(FileNode.path == path,FileNode.name == file_name).first()
@@ -318,13 +304,13 @@ class FilesView(Resource):
         if self.query == 'getInfo':
             return self.serialize_file(file)
         elif self.query == 'download':
-            # if os.path.exists(target_file):
-            #     return send_file(target_file)
-            # else:
-            #     return jsonify(message='error',code='404')
-            with hdfs_client.read(hdfs_path+file_name) as reader:
-                buf = reader.read()
-                return send_file(buf)
+            if os.path.exists(target_file):
+                return send_file(target_file)
+            else:
+                return jsonify(message='error',code='404')
+            # with hdfs_client.read(hdfs_path+file_name) as reader:
+            #     buf = reader.read()
+            #     return send_file(buf)
         elif self.query == 'delete':
             # 获得 父目录
             parent_path = get_parent_path(full_path) # parent_path = a/b
@@ -332,7 +318,7 @@ class FilesView(Resource):
             if os.path.exists(target_file):
                 try:
                     # 在hdfs中删除
-                    hdfs_client.delete(hdfs_path+file_name)
+                    # hdfs_client.delete(hdfs_path+file_name)
 
                     # 删除当前文件在父目录中的内容
                     parent_folder = FileNode.query.filter(FileNode.path == parent_path,FileNode.name == parent_folder_name).first() # c
@@ -366,24 +352,21 @@ class FilesView(Resource):
             if f:
                 # 生成文件名的 hash
                 actual_filename = generate_file_name(full_path, f.filename)
-                # actual_filename = f.filename
                 # 结合 UPLOAD_FOLDER 得到最终文件的存储路径
-                # target_file = os.path.join(os.path.expanduser(app.config['UPLOAD_FOLDER']), actual_filename)
+                target_file = os.path.join(os.path.expanduser(app.config['UPLOAD_FOLDER']), actual_filename)
             
-                hdfs_path = '/user/hadoop' + datetime.date.today().strftime("/%Y/%m/%d/")
+                # hdfs_path = '/user/hadoop' + datetime.date.today().strftime("/%Y/%m/%d/")
                 # hdfs_path = '/user/hadoop/'
-                hdfs_filename = actual_filename
-                data = f.read()
+                # hdfs_filename = actual_filename
+                # data = f.read()
 
                 if os.path.exists(target_file):
                     return jsonify(message='error',code=409)
                 print('after data ')
                 try:
                     # 保存文件
-                    # f.save(target_file)
-                    # print(hdfs_path+hdfs_filename)
-                    # print(data)
-                    hdfs_client.write(hdfs_path + hdfs_filename, data=data)
+                    f.save(target_file)
+                    # hdfs_client.write(hdfs_path + hdfs_filename, data=data)
                     # print(hdfs_client.list('/user/hadoop'))
                     # hdfs_client.write(hdfs_path + hdfs_filename,data)
                     # print(target_file)
@@ -431,9 +414,96 @@ class FilesView(Resource):
                 db.session.commit()
                 return jsonify(message='OK')
             except Exception as e:
-                return jsonify(message='error') 
-            
+                return jsonify(message='error')            
 api.add_resource(FilesView,'/files/<path:full_path>')
+
+@login.user_loader
+def load_user(id):
+	return UserTable.query.get(int(id))
+
+# Models
+class UserTable(UserMixin,db.Model):
+    __tablename__ = 'UserTable'
+    user_id = db.Column(db.Integer,primary_key=True)
+    email = db.Column(db.String(100),unique=True,nullable=True)
+    password_hash = db.Column(db.String(100), nullable=False)
+    def get_id(self):
+        return self.user_id
+    @property
+    def password(self):
+        raise AttributeError('password is not a readable attribute')
+    @password.setter
+    def password(self,password):
+        self.password_hash = generate_password_hash(password)
+    def varify_password(self,password):
+        return check_password_hash(self.password_hash,password)
+    def __repr__(self):
+        return "<User {}>".format(self.email)
+# apis
+class Login(Resource):
+	def post(self):
+		if current_user.is_authenticated:
+			# TODO
+			return jsonify('already authenticated')
+		parse = reqparse.RequestParser()
+		parse.add_argument('email',type=int,help='邮箱验证不通过',default='beiwang121@163.com')
+		parse.add_argument('password',type=str,help='密码验证不通过')
+		args = parse.parse_args()
+
+		email = args.get("email")
+		password = args.get("password")
+		try:
+			user = UserTable.query.filter(email==email).first()
+		except Exception:
+			print("{} User query: {} failure......".format(time.strftime("%Y-%m-%d %H:%M:%S"),email))
+			return jsonify('user not found')
+		else:
+			print("{} User query: {} success...".format(time.strftime("%Y-%m-%d %H:%M:%S"), email))
+		finally:
+			db.session.close()
+		if user and user.varify_password(password):
+			login_user(user)
+			print(current_user)
+			return jsonify('login success')
+		else:
+			print('in if')
+			print("{} User query: {} failure...".format(time.strftime("%Y-%m-%d %H:%M:%S"), email))
+			print('user is None or password False')
+			return jsonify('login fail')
+		
+class Register(Resource):
+	def post(self):
+		parse = reqparse.RequestParser()
+		parse.add_argument('email',type=int,help='email验证不通过',default='beiwang121@163.com')
+		parse.add_argument('password',type=str,help='密码验证不通过')
+		args = parse.parse_args()
+
+		email = args.get('email')
+		password = args.get('password')
+		password_hash = generate_password_hash(password)
+		try:
+			user = UserTable(email = email,password_hash =password_hash)
+			db.session.add(user)
+			db.session.commit()
+		except:
+			print("{} User add: {} failure...".format(time.strftime("%Y-%m-%d %H:%M:%S"), email))
+			db.session.rollback()
+			return jsonify('user add fail')
+		else:
+			print("{} User add: {} success...".format(time.strftime("%Y-%m-%d %H:%M:%S"), email))
+			return jsonify('user add success')
+		finally:
+			db.session.close()
+api.add_resource(Login, '/login', endpoint='login')
+api.add_resource(Register, '/register', endpoint='register')
+
+class LoginOut(Resource):
+	@login_required
+	def get():
+	    logout_user()
+	    flash("已退出登录")
+	    return jsonify('loginout success')
+api.add_resource(LoginOut,'/loginout',endpoint='loginout')
 
 if __name__ == '__main__':
 	app.run()
