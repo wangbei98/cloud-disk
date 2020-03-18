@@ -40,6 +40,20 @@ FileNode
 
 ## api设计
 
+| 资源                     | URL                       | 实现方法/对应功能              |
+| ------------------------ | ------------------------- | ------------------------------ |
+| 登录                     | /api/login                | POST(email,password)           |
+| 注册                     | /api/register             | POST(emil,password)            |
+| 登出                     | /api/logout               | GET                            |
+|                          |                           |                                |
+| 上传文件                 | /api/file/upload          | POST(curId=xxx&file=xx)        |
+| 获取文件信息（目录）     | /api/file/getInfo?id=xxx  | GET                            |
+| 下载文件                 | /api/file/download?id=xxx | GET                            |
+| 重命名文件（目录）       | /api/file/reName          | POST(id=xxx&newName=xxx)       |
+| 新建文件夹               | /api/file/newFolder       | POST(curId=xxx&foldername=xxx) |
+| 获取当前用户所有文件信息 | /api/file/all             | GET                            |
+| 删除文件（目录）         | /api/file/delete?id=xxx   | GET                            |
+
 
 
 ### 文件相关

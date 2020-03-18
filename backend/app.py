@@ -14,6 +14,9 @@ import hdfs
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_restful import Api,Resource,fields,marshal_with,marshal_with_field,reqparse
 from flask_login import LoginManager,UserMixin,login_user, logout_user, current_user, login_required
+from extensions import db,login_manager
+from APIS.auth import Login,Register,Logout
+from APIS.resources import UploadAPI,GetInfoAPI,DownloadFileAPI,ReNameAPI,NewFolderAPI,GetAllAPI,DeleteAPI
 
 # SQLite URI compatiblec
 WIN = sys.platform.startswith('win')
@@ -24,25 +27,22 @@ else:
 
 app = Flask(__name__)
 
-@app.route('/')
-def index():
-	return '<h1> hello world </h1>'
-
-# restful api
-api = Api(app)
-login = LoginManager(app)
-
 # app.jinja_env.trim_blocks = True
 # app.jinja_env.lstrip_blocks = True
 
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'secret string')
-
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', prefix + os.path.join(app.root_path, 'disk.db'))
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path,'upload')
 
-app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path,'upload')
+# restful api
+api = Api(app)
+login = LoginManager(app)
+db.init_app(app)
+login_manager.init_app(app)
 
-db = SQLAlchemy(app)
+
+
 # hdfs client
 # hdfs_client = hdfs.Client("http://116.62.177.146:50070")
 
@@ -67,22 +67,7 @@ def initdb(drop):
     db.session.add(default_user)
     db.session.commit()
     click.echo('Initialized database.')
-# utils
-# 处理文件名
-import hashlib
-def generate_file_name(parent_id,filename):
-    return hashlib.md5(
-                (str(parent_id) + '_' + filename).encode('utf-8')).hexdigest()
 
-def base36_encode(number):
-    assert number >= 0, 'positive integer required'
-    if number == 0:
-        return '0'
-    base36 = []
-    while number != 0:
-        number, i = divmod(number, 36)
-        base36.append('0123456789abcdefghijklmnopqrstuvwxyz'[i])
-    return ''.join(reversed(base36))
 
 #TODO 分享相关
 # # 生成新的短地址
@@ -95,43 +80,7 @@ def base36_encode(number):
 # def generate_url():
 #     return base36_encode(get_random_long_int())
 
-# Models
-class FileNode(db.Model):
-    # 基本信息
-    id = db.Column(db.Integer,primary_key=True)
-    filename = db.Column(db.String(50))
-    path_root = db.Column(db.String(200))
-    parent_id = db.Column(db.Integer,default = 0)
-    type_of_node = db.Column(db.String(20),default='dir')
-    size = db.Column(db.Integer,default = 0)
-    upload_time = db.Column(db.DateTime)
-    # 所属用户
-    user_id = db.Column(db.Integer,db.ForeignKey('UserTable.uid'),default=0)
 
-    # hdfs 相关
-    hdfs_path = db.Column(db.String(50))
-    hdfs_filename = db.Column(db.String(100))
-
-class UserTable(UserMixin,db.Model):
-    __tablename__ = 'UserTable'
-    uid = db.Column(db.Integer,primary_key=True)
-    email = db.Column(db.String(100),unique=True,nullable=True)
-    password_hash = db.Column(db.String(100), nullable=False)
-
-    files = db.relationship('FileNode')
-
-    def get_id(self):
-        return self.user_id
-    @property
-    def password(self):
-        raise AttributeError('password is not a readable attribute')
-    @password.setter
-    def password(self,password):
-        self.password_hash = generate_password_hash(password)
-    def varify_password(self,password):
-        return check_password_hash(self.password_hash,password)
-    def __repr__(self):
-        return "<User {}>".format(self.email)
 '''
 def get_parent_path(full_path):
     splited_path = full_path.split('/')
@@ -152,180 +101,6 @@ def get_name(full_path):
     else:
         return ''
 '''
-
-'''RESTful API'''
-class FilesView(Resource):
-    file_fields={
-        'id':fields.Integer,
-        'filename':fields.String,
-        'path_root':fields.String,
-        'parent_id':fields.Integer,
-        'type_of_node':fields.String,
-        'size':fields.Integer,
-        'upload_time':fields.DateTime,
-        'uid':fields.Integer
-    }
-    @marshal_with(file_fields)
-    def serialize_file(self,file):
-        return file
-    def __init__(self):
-        self.req = request.args
-        self.query = request.args['query']
-    def post(self):
-        if self.query == 'upload':# 上传文件
-            cur_file_id = self.req['curId']# 获取当前文件夹id
-
-            try:
-                cur_file_node = FileNode.query.get(cur_file_id)
-            except Exception as e:
-                return jsonify(message='cur_file_node error')
-            cur_file_path_root = cur_file_node.path_root
-            cur_filename = cur_file_node.filename
-
-            f = request.files['file'] # 获取上传的文件
-            
-            if f:
-                filename = f.filename
-                new_path_root = cur_file_path_root + '/' + cur_filename
-                time = datetime.datetime.now()
-                # 生成文件名的 hash
-                actual_filename = generate_file_name(cur_file_id, filename)
-                # 结合 UPLOAD_FOLDER 得到最终文件的存储路径
-                target_file = os.path.join(os.path.expanduser(app.config['UPLOAD_FOLDER']), actual_filename)
-
-                if os.path.exists(target_file):
-                    return jsonify(message='error',code=409)
-                try:
-                    # 保存文件
-                    f.save(target_file)
-                    print(filename + 'saved')
-                    filenode = FileNode(filename=filename,path_root = new_path_root,parent_id = cur_file_id,upload_time = time)
-                    db.session.add(filename)
-                    print('db added filenode')
-                    db.session.commit()
-                    return jsonify(message='OK')
-                except Exception as e:
-                    return jsonify(message='error')
-
-        elif (self.query == 'addFolder'):# 新建文件夹
-            cur_file_id = self.req['curId']# 获取当前文件夹id
-            filename = self.req['foldername']# 获取新建文件夹的名称
-
-            cur_file_node = FileNode.query.get(cur_file_id)
-            cur_file_path_root = cur_file_node.path_root
-            cur_filename = cur_file_node.filename
-
-            new_path_root = cur_file_path_root + '/' + cur_filename
-            time = datetime.datetime.now()
-            try:
-                filenode = FileNode(filename=filename,path_root = new_path_root,parent_id = cur_file_id,upload_time = time)
-                db.session.add(filenode)
-                db.session.commit()
-                return jsonify(message='OK')
-            except Exception as e:
-                return jsonify(message='error')
-
-        else:# 改名
-            cur_file_id = self.req['curId']
-            new_name = self.req['newName']
-            try:
-                target_file_node = FileNode.query.get(cur_file_id)
-            except Exception as e:
-                return jsonify(message='error')
-            if target_file_node.type_of_node=='dir':# 如果是要修改目录的名字
-                try:
-                    target_file_node.filename = new_name# 先修改当前目录的名字
-                    children = FileNode.query.filter_by(parent_id=cur_file_id)
-                    # 循环修改孩子结点的path_root
-                    for child in children:
-                        old_path_root = child.path_root
-                        prefix = old_path_root.split('/')[:-1]
-                        child.path_root = '/'.join(prefix) + '/' + new_name
-                    db.session.commit()
-                    return jsonify(message='OK')
-                except Exception as e:
-                    return jsonify(message='error')
-            else:# 如果修改的是文件
-                try:
-                    # 修改文件名
-                    old_actual_filename = generate_file_name(cur_file_id, target_file_node.filename)
-                    # 结合 UPLOAD_FOLDER 得到最终文件的存储路径
-                    old_target_file = os.path.join(os.path.expanduser(app.config['UPLOAD_FOLDER']), old_actual_filename)
-
-                    new_actual_filename = generate_file_name(cur_file_id, target_file_node.filename)
-                    # 结合 UPLOAD_FOLDER 得到最终文件的存储路径
-                    new_target_file = os.path.join(os.path.expanduser(app.config['UPLOAD_FOLDER']), old_actual_filename)
-                    # 本地文件重命名
-                    if os.path.exists(old_target_file):
-                        os.rename(old_target_file,new_actual_filename)
-                    # 修改数据库中的文件名
-                    target_file_node.filename = new_name# 修改当前文件的名字
-                    db.session.commit()
-                except Exception as e:
-                    return jsonify(message='error')
-
-    def get(self):
-        cur_file_id = self.req['curId']
-        try:
-            file_node = FileNode.query.get(cur_file_id)
-        except Exception as e:
-            return jsonify(message='error')
-        
-        if self.query == 'getInfo': # 获取信息
-            return self.serialize_file(file_node)
-        elif self.query == 'download': #下载
-            filename = file_node.filename
-            # 生成文件名的 hash
-            actual_filename = generate_file_name(cur_file_id, filename)
-            # 结合 UPLOAD_FOLDER 得到最终文件的存储路径
-            target_file = os.path.join(os.path.expanduser(app.config['UPLOAD_FOLDER']), actual_filename)
-            if os.path.exists(target_file):
-                return send_file(target_file)
-            else:
-                return jsonify(message='error',code='404')
-        elif self.query == 'getAll': # 获取该用户的所有文件信息
-            cur_uid = self.req['curUid']
-            try:
-                file_nodes = FileNode.query.filter_by(user_id=cur_uid)
-                return jsonify(data=[ serialize(file) for file in file_nodes])
-            except Exception as e:
-                return jsonify(message='error')
-        else: # delete
-            if file_node.type_of_node == 'dir':# 如果删除的是文件夹
-                children = FileNode.query.filter_by(parent_id=cur_file_id)
-                # 循环删除
-                for child in children:
-                    delete_node(child)
-                delete_node(file_node)
-                return jsonify('LOOP delete OK')
-            else: # 如果是删除文件
-                delete_node(file_node)
-                return jsonify('delete file OK')
-api.add_resource(FilesView,'/file')
-
-
-# 辅助函数
-# 删除结点
-def delete_node(file_node):
-    # 把此结点从数据库中删除
-    try:
-        db.session.delete(file_node)
-        db.session.commit()
-        return jsonify(message='delete success')
-    except Exception as e:
-        return jsonify(message='error')
-    # 如果删除的是文件，则先把文件从系统中删除
-    if file_node.type_of_node != 'dir':
-        filename = file_node.filename
-        # 生成文件名的 hash
-        actual_filename = generate_file_name(cur_file_id, filename)
-        # 结合 UPLOAD_FOLDER 得到最终文件的存储路径
-        target_file = os.path.join(os.path.expanduser(app.config['UPLOAD_FOLDER']), actual_filename)
-        if os.path.exists(target_file):
-            os.remove(target_file)
-    
-
-
 '''
 class FoldersView(Resource):
     folder_fields = {
@@ -613,75 +388,18 @@ class FilesView(Resource):
                 return jsonify(message='error')            
 api.add_resource(FilesView,'/files/<path:full_path>')
 '''
-@login.user_loader
-def load_user(id):
-	return UserTable.query.get(int(id))
 
-# apis
-class Login(Resource):
-	def post(self):
-		if current_user.is_authenticated:
-			# TODO
-			return jsonify('already authenticated')
-		parse = reqparse.RequestParser()
-		parse.add_argument('email',type=int,help='邮箱验证不通过',default='beiwang121@163.com')
-		parse.add_argument('password',type=str,help='密码验证不通过')
-		args = parse.parse_args()
+api.add_resource(Login, '/api/login', endpoint='login')
+api.add_resource(Register, '/api/register', endpoint='register')
+api.add_resource(Logout,'/api/logout',endpoint='logout')
 
-		email = args.get("email")
-		password = args.get("password")
-		try:
-			user = UserTable.query.filter(email==email).first()
-		except Exception:
-			print("{} User query: {} failure......".format(time.strftime("%Y-%m-%d %H:%M:%S"),email))
-			return jsonify('user not found')
-		else:
-			print("{} User query: {} success...".format(time.strftime("%Y-%m-%d %H:%M:%S"), email))
-		finally:
-			db.session.close()
-		if user and user.varify_password(password):
-			login_user(user)
-			print(current_user)
-			return jsonify('login success')
-		else:
-			print('in if')
-			print("{} User query: {} failure...".format(time.strftime("%Y-%m-%d %H:%M:%S"), email))
-			print('user is None or password False')
-			return jsonify('login fail')
-		
-class Register(Resource):
-	def post(self):
-		parse = reqparse.RequestParser()
-		parse.add_argument('email',type=int,help='email验证不通过',default='beiwang121@163.com')
-		parse.add_argument('password',type=str,help='密码验证不通过')
-		args = parse.parse_args()
-
-		email = args.get('email')
-		password = args.get('password')
-		password_hash = generate_password_hash(password)
-		try:
-			user = UserTable(email = email,password_hash =password_hash)
-			db.session.add(user)
-			db.session.commit()
-		except:
-			print("{} User add: {} failure...".format(time.strftime("%Y-%m-%d %H:%M:%S"), email))
-			db.session.rollback()
-			return jsonify('user add fail')
-		else:
-			print("{} User add: {} success...".format(time.strftime("%Y-%m-%d %H:%M:%S"), email))
-			return jsonify('user add success')
-		finally:
-			db.session.close()
-api.add_resource(Login, '/login', endpoint='login')
-api.add_resource(Register, '/register', endpoint='register')
-
-class LoginOut(Resource):
-	@login_required
-	def get():
-	    logout_user()
-	    flash("已退出登录")
-	    return jsonify('loginout success')
-api.add_resource(LoginOut,'/loginout',endpoint='loginout')
+api.add_resource(UploadAPI,'/api/file/upload',endpoint='upload')
+api.add_resource(GetInfoAPI,'/api/file/getInfo',endpoint='getInfo')
+api.add_resource(DownloadFileAPI,'/api/file/download',endpoint='download')
+api.add_resource(ReNameAPI,'/api/file/reName',endpoint='reName')
+api.add_resource(NewFolderAPI,'/api/file/newFolder',endpoint='newFolder')
+api.add_resource(GetAllAPI,'/api/file/all',endpoint='all')
+api.add_resource(DeleteAPI,'/api/file/delete',endpoint='delete')
 
 if __name__ == '__main__':
 	app.run()
