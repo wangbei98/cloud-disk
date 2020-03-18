@@ -197,10 +197,15 @@ class GetAllAPI(Resource):
 		return file
 
 	def get(self):
-		cur_uid = self.req['curUid']
+		parse = reqparse.RequestParser()
+		parse.add_argument('curUid',type=int,help='错误的curId',default='0')
+		args = parse.parse_args()
+		# 获取当前文件夹id
+		cur_uid = args.get('curUid')# 获取当前文件夹id
 		try:
 			file_nodes = FileNode.query.filter_by(user_id=cur_uid)
-			return jsonify(data=[ self.serialize(file) for file in file_nodes])
+			
+			return jsonify(data=[ self.serialize_file(file) for file in file_nodes])
 		except Exception as e:
 			return jsonify(message='error')
 class DeleteAPI(Resource):
