@@ -45,7 +45,7 @@ class UploadAPI(Resource):
 		if f:
 			filename = f.filename
 			new_path_root = cur_file_path_root + '/' + cur_filename
-			time = int(time.time())
+			d_time = int(time.time())
 			# 生成文件名的 hash
 			actual_filename = generate_file_name(cur_file_id, filename)
 			# 结合 UPLOAD_FOLDER 得到最终文件的存储路径
@@ -57,7 +57,7 @@ class UploadAPI(Resource):
 				# 保存文件
 				f.save(target_file)
 				print(filename + ' saved')
-				filenode = FileNode(filename=filename,path_root = new_path_root,parent_id = cur_file_id,type_of_node=filename.split('.')[-1],upload_time = time)
+				filenode = FileNode(filename=filename,path_root = new_path_root,parent_id = cur_file_id,type_of_node=filename.split('.')[-1],upload_time = d_time)
 				db.session.add(filenode)
 				print('db added filenode')
 				db.session.commit()
@@ -86,12 +86,14 @@ class GetInfoAPI(Resource):
 		file_id = args.get('id')
 		try:
 			file_node = FileNode.query.get(file_id)
+			child = FileNode.query.filter_by(parent_id=file_id).all()
+			num_of_children = len(child)
 		except:
 			return jsonify(message='error')
 		if file_node == None:
 			return jsonify('no sucn node')
 		# 获取信息
-		return self.serialize_file(file_node)
+		return jsonify(num_of_children= num_of_children, data = self.serialize_file(file_node) ) 
 
 class DownloadFileAPI(Resource):
 	def get(self):
@@ -175,9 +177,9 @@ class NewFolderAPI(Resource):
 		cur_filename = cur_file_node.filename
 
 		new_path_root = cur_file_path_root + '/' + cur_filename
-		time = int(time.time())
+		d_time = int(time.time())
 		try:
-			filenode = FileNode(filename=filename,path_root = new_path_root,parent_id = cur_file_id,upload_time = time)
+			filenode = FileNode(filename=filename,path_root = new_path_root,parent_id = cur_file_id,upload_time = d_time)
 			db.session.add(filenode)
 			db.session.commit()
 			return jsonify(message='OK')
@@ -206,7 +208,6 @@ class GetAllAPI(Resource):
 		cur_uid = args.get('curUid')# 获取当前文件夹id
 		try:
 			file_nodes = FileNode.query.filter_by(user_id=cur_uid)
-			
 			return jsonify(data=[ self.serialize_file(file) for file in file_nodes])
 		except Exception as e:
 			return jsonify(message='error')
