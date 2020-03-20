@@ -14,7 +14,7 @@ class FileNode(db.Model):
     parent_id = db.Column(db.Integer,default = 0)
     type_of_node = db.Column(db.String(20),default='dir')
     size = db.Column(db.Integer,default = 0)
-    upload_time = db.Column(db.DateTime)
+    upload_time = db.Column(db.Integer)
     # 所属用户
     user_id = db.Column(db.Integer,db.ForeignKey('UserTable.uid'),default=0)
 

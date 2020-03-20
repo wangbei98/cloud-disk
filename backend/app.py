@@ -17,6 +17,7 @@ from flask_login import LoginManager,UserMixin,login_user, logout_user, current_
 from extensions import db,login_manager
 from APIS.auth import Login,Register,Logout
 from APIS.resources import UploadAPI,GetInfoAPI,DownloadFileAPI,ReNameAPI,NewFolderAPI,GetAllAPI,DeleteAPI
+from models import UserTable,FileNode
 
 # SQLite URI compatiblec
 WIN = sys.platform.startswith('win')
@@ -49,7 +50,7 @@ login_manager.init_app(app)
 # handlers
 @app.shell_context_processor
 def make_shell_context():
-    return dict(db=db, FileNode=FileNode,UserTable=UserTable)
+    return dict(db=db, FileNode=FileNode,UserTable=UserTable)   
 
 @app.cli.command()
 @click.option('--drop', is_flag=True, help='Create after drop.')
