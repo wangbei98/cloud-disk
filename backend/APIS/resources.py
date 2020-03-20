@@ -117,7 +117,7 @@ class DownloadFileAPI(Resource):
 		if os.path.exists(target_file):
 			print(filename)
 			print(target_file)
-			return send_file(target_file,as_attachment=True,attachment_filename='a.py')
+			return send_file(target_file,as_attachment=True,attachment_filename=filename)
 		else:
 			return jsonify(message='error',code='404')
 
