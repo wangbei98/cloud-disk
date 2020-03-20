@@ -20,7 +20,7 @@ UPLOAD_FOLDER = config['UPLOAD_FOLDER']
 
 class UploadAPI(Resource):
 	def post(self):
-		print(UPLOAD_FOLDER)
+		# print(UPLOAD_FOLDER)
 		parse = reqparse.RequestParser()
 		parse.add_argument('curId',type=int,help='错误的curId',default='0')
 		parse.add_argument('file', type=FileStorage, location='files')
@@ -37,10 +37,10 @@ class UploadAPI(Resource):
 		cur_filename = cur_file_node.filename
 
 		# f = request.files['file'] # 获取上传的文件
-		print(f.filename)
-		print(f.filename.split('.')[-1])
-		print(cur_file_path_root)
-		print(cur_filename)
+		# print(f.filename)
+		# print(f.filename.split('.')[-1])
+		# print(cur_file_path_root)
+		# print(cur_filename)
 		
 		if f:
 			filename = f.filename
@@ -56,10 +56,10 @@ class UploadAPI(Resource):
 			try:
 				# 保存文件
 				f.save(target_file)
-				print(filename + ' saved')
+				# print(filename + ' saved')
 				filenode = FileNode(filename=filename,path_root = new_path_root,parent_id = cur_file_id,type_of_node=filename.split('.')[-1],upload_time = d_time)
 				db.session.add(filenode)
-				print('db added filenode')
+				# print('db added filenode')
 				db.session.commit()
 				return jsonify(message='OK')
 			except Exception as e:
@@ -115,8 +115,8 @@ class DownloadFileAPI(Resource):
 			# 结合 UPLOAD_FOLDER 得到最终文件的存储路径
 		target_file = os.path.join(os.path.expanduser(UPLOAD_FOLDER), actual_filename)
 		if os.path.exists(target_file):
-			print(filename)
-			print(target_file)
+			# print(filename)
+			# print(target_file)
 			return send_file(target_file,as_attachment=True,attachment_filename=filename)
 		else:
 			return jsonify(message='error',code='404')
@@ -248,7 +248,7 @@ def generate_file_name(parent_id,filename):
 				(str(parent_id) + '_' + filename).encode('utf-8')).hexdigest()
 
 def delete_node(file_nde):
-	print('in func delete_node')
+	# print('in func delete_node')
 	# TODO 递归删除	# 此结点从数据库中删除
 	try:
 		db.session.delete(file_node)
