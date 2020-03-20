@@ -14,7 +14,7 @@ from models import FileNode,UserTable
 from extensions import db,login_manager
 from werkzeug.datastructures import FileStorage
 from settings import config
-
+from flask import send_file,make_response
 
 UPLOAD_FOLDER = config['UPLOAD_FOLDER']
 
@@ -107,13 +107,17 @@ class DownloadFileAPI(Resource):
 		except Exception as e:
 			return jsonify(message='error')
 		
+		parent_id = file_node.parent_id
 		filename = file_node.filename
+
 			# 生成文件名的 hash
-		actual_filename = generate_file_name(file_id, filename)
+		actual_filename = generate_file_name(parent_id, filename)
 			# 结合 UPLOAD_FOLDER 得到最终文件的存储路径
 		target_file = os.path.join(os.path.expanduser(UPLOAD_FOLDER), actual_filename)
 		if os.path.exists(target_file):
-			return send_file(target_file)
+			print(filename)
+			print(target_file)
+			return send_file(target_file,as_attachment=True,attachment_filename='a.py')
 		else:
 			return jsonify(message='error',code='404')
 
