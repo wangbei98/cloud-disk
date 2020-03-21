@@ -54,3 +54,22 @@ FileNode
 | 获取当前用户所有文件信息 | /api/file/all             | GET                            |
 | 删除文件（目录）         | /api/file/delete?id=xxx   | GET                            |
 
+
+
+## 返回值协议
+
+* 0-9 ：
+* 10-19: 数据库
+* 20-29: 文件
+
+| code | Message                       | Data | 说明                       |
+| ---- | ----------------------------- | ---- | -------------------------- |
+| 0    |                               |      | 成功                       |
+| 10   | database error                |      | 未知数据库错误             |
+| 11   | node not exist, query fail    |      | 当前结点在数据库中不存在   |
+| 12   | node already exist , add fail |      | 目标结点已经存在，插入失败 |
+|      |                               |      |                            |
+| 20   | File error                    |      | 未知文件错误               |
+| 21   | file already exist, save fail |      | 文件已存在，保存失败       |
+| 22   | file not exist                |      | 目标文件不存在             |
+
