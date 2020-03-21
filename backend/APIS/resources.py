@@ -122,6 +122,45 @@ class DownloadFileAPI(Resource):
 			return jsonify(code='22',message='file not exist')
 
 class ReNameAPI(Resource):
+	# 重命名文件
+	def reNameFile(self,target_file_node,new_name):
+		# node 是要重命名的结点
+		try:
+				# 修改文件名
+			old_actual_filename = generate_file_name(target_file_node.parent_id, target_file_node.filename)
+			# 结合 UPLOAD_FOLDER 得到最终文件的存储路径
+			target_file = os.path.join(os.path.expanduser(UPLOAD_FOLDER), old_actual_filename)
+
+			new_actual_filename = generate_file_name(target_file_node.parent_id,new_name)
+			# 本地文件重命名
+			if os.path.exists(old_target_file):
+				os.rename(target_file,new_actual_filename)
+			# 修改数据库中的文件名
+			target_file_node.filename = new_name# 修改当前文件的名字
+			db.session.commit()
+			return jsonify(code = 0,message='OK')
+		except:
+			return jsonify(code=20,message='file error')
+	# 递归修改孩子的路径
+	# parent_node 需要修改路径的孩子的父节点
+	# new_name 修改后的文件名
+	# 当前是第几层
+	def changeChildrenPath(self,parent_node,new_name,n):
+		try:
+			# 获取所有孩子节点
+			children = FileNode.query.filter_by(parent_id=parent_node.id).all()
+		except:
+			return jsonify(code = 10,message='database error')
+		pos = n * (-1)
+		for child in children:
+			if child.type_of_node == 'dir':
+				# 递归修改孩子
+				self.changeChildrenPath(child,new_name,n+1)
+				# 修改孩子的path
+			old_path_root = child.path_root.split('/')
+			old_path_root[pos] = new_name
+			new_path_root = '/'.join(old_path_root)
+			child.path_root = new_path_root
 	def post(self):
 		parse = reqparse.RequestParser()
 		parse.add_argument('id',type=int,help='错误的id',default='0')
@@ -138,34 +177,13 @@ class ReNameAPI(Resource):
 			# TODO : 递归修改 path_root
 			try:
 				target_file_node.filename = new_name# 先修改当前目录的名字
-				children = FileNode.query.filter_by(parent_id=cur_file_id)
-				# 循环修改孩子结点的path_root
-				for child in children:
-					old_path_root = child.path_root
-					prefix = old_path_root.split('/')[:-1]
-					child.path_root = '/'.join(prefix) + '/' + new_name
+				self.changeChildrenPath(target_file_node,new_name,1)
 				db.session.commit()
 				return jsonify(code=0,message='OK')
 			except:
 				return jsonify(code=10,message='database error')
 		else:# 如果修改的是文件
-			try:
-				# 修改文件名
-				old_actual_filename = generate_file_name(cur_file_id, target_file_node.filename)
-				# 结合 UPLOAD_FOLDER 得到最终文件的存储路径
-				old_target_file = os.path.join(os.path.expanduser(UPLOAD_FOLDER), old_actual_filename)
-
-				new_actual_filename = generate_file_name(cur_file_id, target_file_node.filename)
-				# 结合 UPLOAD_FOLDER 得到最终文件的存储路径
-				new_target_file = os.path.join(os.path.expanduser(UPLOAD_FOLDER), old_actual_filename)
-				# 本地文件重命名
-				if os.path.exists(old_target_file):
-					os.rename(old_target_file,new_actual_filename)
-				# 修改数据库中的文件名
-				target_file_node.filename = new_name# 修改当前文件的名字
-				db.session.commit()
-			except:
-				return jsonify(code=20,message='file error')
+			self.reNameFile(target_file_node,new_name)
 class NewFolderAPI(Resource):
 	file_fields={
 		'id':fields.Integer,
