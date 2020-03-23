@@ -125,18 +125,24 @@ class ReNameAPI(Resource):
 	# 重命名文件
 	def reNameFile(self,target_file_node,new_name):
 		# node 是要重命名的结点
+		print('0')
 		try:
 				# 修改文件名
+			print('1')
 			old_actual_filename = generate_file_name(target_file_node.parent_id, target_file_node.filename)
 			# 结合 UPLOAD_FOLDER 得到最终文件的存储路径
 			target_file = os.path.join(os.path.expanduser(UPLOAD_FOLDER), old_actual_filename)
-
+			print('2')
 			new_actual_filename = generate_file_name(target_file_node.parent_id,new_name)
+			new_target_file = os.path.join(os.path.expanduser(UPLOAD_FOLDER), new_actual_filename)
 			# 本地文件重命名
-			if os.path.exists(old_target_file):
-				os.rename(target_file,new_actual_filename)
+			print(target_file)
+			if os.path.exists(target_file):
+				print('3')
+				os.rename(target_file,new_target_file)
 			# 修改数据库中的文件名
 			target_file_node.filename = new_name# 修改当前文件的名字
+			print('4')
 			db.session.commit()
 			return jsonify(code = 0,message='OK')
 		except:
@@ -152,6 +158,8 @@ class ReNameAPI(Resource):
 		except:
 			return jsonify(code = 10,message='database error')
 		pos = n * (-1)
+		if children == None:
+			return
 		for child in children:
 			if child.type_of_node == 'dir':
 				# 递归修改孩子
@@ -183,7 +191,7 @@ class ReNameAPI(Resource):
 			except:
 				return jsonify(code=10,message='database error')
 		else:# 如果修改的是文件
-			self.reNameFile(target_file_node,new_name)
+			return self.reNameFile(target_file_node,new_name)
 class NewFolderAPI(Resource):
 	file_fields={
 		'id':fields.Integer,
