@@ -14,7 +14,7 @@ from models import FileNode,UserTable
 from extensions import db,login_manager
 from werkzeug.datastructures import FileStorage
 from settings import config
-from flask import send_file,make_response
+from flask import send_file,make_response,send_from_directory
 
 UPLOAD_FOLDER = config['UPLOAD_FOLDER']
 
@@ -29,10 +29,12 @@ class UploadAPI(Resource):
 		# 获取当前文件夹id
 		cur_file_id = args.get('curId')
 		f = args['file']
+		if "/" in f.filename:
+        	return jsonify(code=,message = 'filename should not has separator')
 		try:
 			cur_file_node = FileNode.query.get(cur_file_id)
 		except:
-			return jsonify(code=11,message='node not exist, query fail')
+			return jsonify(code=11,message='illegal filename')
 		cur_file_path_root = cur_file_node.path_root
 		cur_filename = cur_file_node.filename
 
@@ -117,7 +119,8 @@ class DownloadFileAPI(Resource):
 		if os.path.exists(target_file):
 			# print(filename)
 			# print(target_file)
-			return send_file(target_file,as_attachment=True,attachment_filename=filename,cache_timeout=3600)
+			# return send_file(target_file,as_attachment=True,attachment_filename=filename,cache_timeout=3600)
+			return send_from_directory(UPLOAD_FOLDER,actual_filename,as_attachment=True)
 		else:
 			return jsonify(code='22',message='file not exist')
 

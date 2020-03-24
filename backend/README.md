@@ -72,4 +72,5 @@ FileNode
 | 20   | File error                    |      | 未知文件错误               |
 | 21   | file already exist, save fail |      | 文件已存在，保存失败       |
 | 22   | file not exist                |      | 目标文件不存在             |
+| 23   | illegal filename              |      | 文件名不合格               |
 
