@@ -117,7 +117,7 @@ class DownloadFileAPI(Resource):
 		if os.path.exists(target_file):
 			# print(filename)
 			# print(target_file)
-			return send_file(target_file,as_attachment=True,attachment_filename=filename)
+			return send_file(target_file,as_attachment=True,attachment_filename=filename,cache_timeout=3600)
 		else:
 			return jsonify(code='22',message='file not exist')
 
