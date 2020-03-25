@@ -14,7 +14,7 @@ from models import FileNode,UserTable
 from extensions import db,login_manager
 from werkzeug.datastructures import FileStorage
 from settings import config
-from flask import send_file,make_response,send_from_directory
+from flask import send_file,make_response,send_from_directory,stream_with_context
 
 UPLOAD_FOLDER = config['UPLOAD_FOLDER']
 CHUNK_SIZE = config['CHUNK_SIZE']
@@ -131,7 +131,7 @@ class DownloadFileAPI(Resource):
 			# print(target_file)
 			# return send_file(target_file,as_attachment=True,attachment_filename=filename,cache_timeout=3600)
 			# return send_from_directory(UPLOAD_FOLDER,actual_filename,as_attachment=True)
-			response =  Response(self.generate(target_file),content_type='application/octet-stream')
+			response =  Response(stream_with_context(self.generate(target_file)),content_type='application/octet-stream')
 			response.headers["Content-disposition"] = "attachment; filename={}".format(filename.encode().decode('latin-1'))
 			return response
 		else:
