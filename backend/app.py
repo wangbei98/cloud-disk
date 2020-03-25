@@ -16,7 +16,7 @@ from flask_restful import Api,Resource,fields,marshal_with,marshal_with_field,re
 from flask_login import LoginManager,UserMixin,login_user, logout_user, current_user, login_required
 from extensions import db,login_manager
 from APIS.auth import Login,Register,Logout
-from APIS.resources import UploadAPI,GetInfoAPI,DownloadFileAPI,ReNameAPI,NewFolderAPI,GetAllAPI,DeleteAPI
+from APIS.resources import UploadAPI,GetInfoAPI,DownloadFileAPI,ReNameAPI,NewFolderAPI,GetAllAPI,DeleteAPI,PreviewAPI
 from models import UserTable,FileNode
 
 # SQLite URI compatiblec
@@ -401,6 +401,6 @@ api.add_resource(ReNameAPI,'/api/file/reName',endpoint='reName')
 api.add_resource(NewFolderAPI,'/api/file/newFolder',endpoint='newFolder')
 api.add_resource(GetAllAPI,'/api/file/all',endpoint='all')
 api.add_resource(DeleteAPI,'/api/file/delete',endpoint='delete')
-
+api.add_resource(PreviewAPI,'/api/file/preview',endpoint='preview')
 if __name__ == '__main__':
 	app.run()

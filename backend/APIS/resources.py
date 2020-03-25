@@ -47,6 +47,11 @@ class UploadAPI(Resource):
 		
 		if f:
 			filename = f.filename
+			# print('\"' in filename)
+			# print('"' in filename)
+			# print(filename[:-1])
+			if '\"' in filename:
+				filename = filename[:-1]
 			new_path_root = cur_file_path_root + '/' + cur_filename
 			d_time = int(time.time())
 			# 生成文件名的 hash
@@ -292,6 +297,38 @@ class DeleteAPI(Resource):
 		else: # 如果是删除文件
 			delete_node(file_node)
 			return jsonify('delete file OK')
+class PreviewAPI(Resource):
+	def get(self):
+		parse = reqparse.RequestParser()
+		parse.add_argument('id',type=int,help='错误的id',default='0')
+		args = parse.parse_args()
+		# 获取当前文件夹id
+		file_id = args.get('id')
+		try:
+			file_node = FileNode.query.get(file_id)
+		except:
+			return jsonify(code = 11,message='node not exist, query fail')
+		if file_node == None:
+			return jsonify(code = 11,message='node not exist, query fail')
+		if file_node.type_of_node in ['jpeg','jpg','png']:
+			parent_id = file_node.parent_id
+			filename = file_node.filename
+			node_type = file_node.type_of_node
+				# 生成文件名的 hash
+			actual_filename = generate_file_name(parent_id, filename)
+				# 结合 UPLOAD_FOLDER 得到最终文件的存储路径
+			target_file = os.path.join(os.path.expanduser(UPLOAD_FOLDER), actual_filename)
+			if os.path.exists(target_file):
+				img_data = open(target_file,"rb").read()
+				response = make_response(img_data)
+				response.headers['Content-Type'] = 'image/' + node_type
+				return response
+			else:
+				return jsonify(code='22',message='file not exist')
+		else:
+			return jsonify(code = 24,message='preview not allowed')
+
+
 # 辅助函数
 # 删除结点
 
