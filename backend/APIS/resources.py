@@ -322,6 +322,7 @@ class DeleteAPI(Resource):
 		if file_node.type_of_node == 'dir':# 如果删除的是文件夹
 			try:
 				self.deleteChildren(file_node)
+				db.session.delete(file_node)
 				db.session.commit()
 				return jsonify(code=0,message='OK')
 			except:
