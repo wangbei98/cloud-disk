@@ -129,11 +129,11 @@ class DownloadFileAPI(Resource):
 
 			# print(filename)
 			# print(target_file)
-			# return send_file(target_file,as_attachment=True,attachment_filename=filename,cache_timeout=3600)
+			return send_file(target_file,as_attachment=True,attachment_filename=filename,cache_timeout=3600)
 			# return send_from_directory(UPLOAD_FOLDER,actual_filename,as_attachment=True)
-			response =  Response(stream_with_context(self.generate(target_file)),content_type='application/octet-stream')
-			response.headers["Content-disposition"] = "attachment; filename={}".format(filename.encode().decode('latin-1'))
-			return response
+			# response =  Response(stream_with_context(self.generate(target_file)),content_type='application/octet-stream')
+			# response.headers["Content-disposition"] = "attachment; filename={}".format(filename.encode().decode('latin-1'))
+			# return response
 		else:
 			return jsonify(code='22',message='file not exist')
 
