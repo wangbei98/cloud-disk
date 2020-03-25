@@ -15,6 +15,7 @@ hdfs = "*"
 python-dotenv = "*"
 gunicorn = "*"
 flask-login = "*"
+pillow = "*"
 
 [requires]
 python_version = "3.6"
