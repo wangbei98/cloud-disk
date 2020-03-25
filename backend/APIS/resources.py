@@ -5,7 +5,7 @@ import time
 import datetime
 import click
 from flask import Flask,request,abort
-from flask import jsonify
+from flask import jsonify,Response
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_restful import Api,Resource,fields,marshal_with,marshal_with_field,reqparse
@@ -17,6 +17,7 @@ from settings import config
 from flask import send_file,make_response,send_from_directory
 
 UPLOAD_FOLDER = config['UPLOAD_FOLDER']
+CHUNK_SIZE = config['CHUNK_SIZE']
 
 class UploadAPI(Resource):
 	def post(self):
@@ -30,7 +31,7 @@ class UploadAPI(Resource):
 		cur_file_id = args.get('curId')
 		f = args['file']
 		if "/" in f.filename:
-        	return jsonify(code=,message = 'filename should not has separator')
+			return jsonify(code=23,message = 'filename should not has separator')
 		try:
 			cur_file_node = FileNode.query.get(cur_file_id)
 		except:
@@ -98,6 +99,14 @@ class GetInfoAPI(Resource):
 		return jsonify(code=0,num_of_children= num_of_children, data = self.serialize_file(file_node) ) 
 
 class DownloadFileAPI(Resource):
+	def generate(self,path):
+		with open(path, 'rb') as fd:
+			while 1:
+				buf = fd.read(CHUNK_SIZE)
+				if buf:
+					yield buf
+				else:
+					break
 	def get(self):
 		parse = reqparse.RequestParser()
 		parse.add_argument('id',type=int,help='错误的id',default='0')
@@ -117,10 +126,14 @@ class DownloadFileAPI(Resource):
 			# 结合 UPLOAD_FOLDER 得到最终文件的存储路径
 		target_file = os.path.join(os.path.expanduser(UPLOAD_FOLDER), actual_filename)
 		if os.path.exists(target_file):
+
 			# print(filename)
 			# print(target_file)
 			# return send_file(target_file,as_attachment=True,attachment_filename=filename,cache_timeout=3600)
-			return send_from_directory(UPLOAD_FOLDER,actual_filename,as_attachment=True)
+			# return send_from_directory(UPLOAD_FOLDER,actual_filename,as_attachment=True)
+			response =  Response(self.generate(target_file),content_type='application/octet-stream')
+			response.headers["Content-disposition"] = "attachment; filename={}".format(filename.encode().decode('latin-1'))
+			return response
 		else:
 			return jsonify(code='22',message='file not exist')
 
