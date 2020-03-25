@@ -276,6 +276,38 @@ class GetAllAPI(Resource):
 		except :
 			return jsonify(code=10,message='database error')
 class DeleteAPI(Resource):
+	def deleteFile(self,target_file_node):
+		try:
+			filename = target_file_node.filename
+			parent_id = target_file_node.parent_id
+			actual_filename = generate_file_name(parent_id, filename)
+			# 结合 UPLOAD_FOLDER 得到最终文件的存储路径
+			target_file = os.path.join(os.path.expanduser(UPLOAD_FOLDER), actual_filename)
+			# 本地删除
+			if os.path.exists(target_file):
+				os.remove(target_file)
+			# 修改数据库中的文件名
+			db.session.delete(target_file_node)
+			db.session.commit()
+			return jsonify(code = 0,message='OK')
+		except:
+			return jsonify(code=20,message='file error')
+	def deleteChildren(self,parent_node):
+		try:
+			# 获取所有孩子节点
+			children = FileNode.query.filter_by(parent_id=parent_node.id).all()
+		except:
+			return jsonify(code = 10,message='database error')
+		if children == None:
+			return
+		for child in children:
+			if child.type_of_node == 'dir':
+				# 递归修改孩子
+				self.deleteChildren(child)
+				# 修改孩子的path
+			else:
+				self.deleteFile(child)
+			db.session.delete(child)
 	def get(self):
 		parse = reqparse.RequestParser()
 		parse.add_argument('id',type=int,help='错误的id',default='0')
@@ -288,15 +320,14 @@ class DeleteAPI(Resource):
 			return jsonify(message='error')
 
 		if file_node.type_of_node == 'dir':# 如果删除的是文件夹
-			children = FileNode.query.filter_by(parent_id=file_id)
-			# 循环删除
-			for child in children:
-				delete_node(child)
-			delete_node(file_node)
-			return jsonify('LOOP delete OK')
+			try:
+				self.deleteChildren(file_node)
+				db.session.commit()
+				return jsonify(code=0,message='OK')
+			except:
+				return jsonify(code=10,message='database error')
 		else: # 如果是删除文件
-			delete_node(file_node)
-			return jsonify('delete file OK')
+			return	self.deleteFile(file_node)
 class PreviewAPI(Resource):
 	def get(self):
 		parse = reqparse.RequestParser()
