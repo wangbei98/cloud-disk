@@ -370,22 +370,4 @@ def generate_file_name(parent_id,filename):
 	return hashlib.md5(
 				(str(parent_id) + '_' + filename).encode('utf-8')).hexdigest()
 
-def delete_node(file_nde):
-	# print('in func delete_node')
-	# TODO 递归删除	# 此结点从数据库中删除
-	try:
-		db.session.delete(file_node)
-		db.session.commit()
-		returnjsoify(message='delete success')
-	except Exception as e:
-		return jsonify(message='error')
-	# 如果删除的是文件，则先把文件从系统中删除
-	if file_node.type_of_node != 'dir':
-		filename = file_node.filename
-		# 生成文件名的 hash
-		actual_filename = generate_file_name(cur_file_id, filename)
-		# 结合 UPLOAD_FOLDER 得到最终文件的存储路径
-		target_file = os.path.join(os.path.expanduser(UPLOAD_FOLDER), actual_filename)
-		if os.path.exists(target_file):
-			os.remove(target_file)
 
