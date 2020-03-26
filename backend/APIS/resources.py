@@ -22,6 +22,19 @@ UPLOAD_FOLDER = config['UPLOAD_FOLDER']
 CHUNK_SIZE = config['CHUNK_SIZE']
 
 class UploadAPI(Resource):
+	file_fields={
+		'id':fields.Integer,
+		'filename':fields.String,
+		'path_root':fields.String,
+		'parent_id':fields.Integer,
+		'type_of_node':fields.String,
+		'size':fields.Integer,
+		'upload_time':fields.Integer,
+		'uid':fields.Integer
+	}
+	@marshal_with(file_fields)
+	def serialize_file(self,file):
+		return file
 	def post(self):
 		# print(UPLOAD_FOLDER)
 		parse = reqparse.RequestParser()
@@ -40,12 +53,6 @@ class UploadAPI(Resource):
 			return jsonify(code=11,message='illegal filename')
 		cur_file_path_root = cur_file_node.path_root
 		cur_filename = cur_file_node.filename
-
-		# f = request.files['file'] # 获取上传的文件
-		# print(f.filename)
-		# print(f.filename.split('.')[-1])
-		# print(cur_file_path_root)
-		# print(cur_filename)
 		
 		if f:
 			filename = f.filename
@@ -71,7 +78,7 @@ class UploadAPI(Resource):
 				db.session.add(filenode)
 				# print('db added filenode')
 				db.session.commit()
-				return jsonify(code=0,message='OK')
+				return jsonify(code=0,message='OK',data = self.serialize_file(filenode))
 			except:
 				return jsonify(code=12,message='node already exist , add fail')
 class GetInfoAPI(Resource):
