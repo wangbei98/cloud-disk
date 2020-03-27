@@ -15,6 +15,13 @@ from extensions import db,login_manager
 
 # apis
 class Login(Resource):
+	user_fields = {
+    	'uid' : fields.Integer,
+    	'email' : fields.String,
+	}
+	@marshal_with(user_fields)
+	def serialize_user(self,user):
+		return user
 	def post(self):
 		if current_user.is_authenticated:
 			# TODO
@@ -39,7 +46,7 @@ class Login(Resource):
 			login_user(user)
 			print('current_user')
 			print(current_user)
-			return jsonify('login success')
+			return jsonify(code = 0,message = 'login success',data = self.serialize_user(user))
 		else:
 			print('in if')
 			print("{} User query: {} failure...".format(time.strftime("%Y-%m-%d %H:%M:%S"), email))
@@ -47,6 +54,13 @@ class Login(Resource):
 			return jsonify('login fail')
 		
 class Register(Resource):
+	user_fields = {
+    	'uid' : fields.Integer,
+    	'email' : fields.String,
+	}
+	@marshal_with(user_fields)
+	def serialize_user(self,user):
+		return user
 	def post(self):
 		parse = reqparse.RequestParser()
 		parse.add_argument('email',type=str,help='email验证不通过',default='beiwang121@163.com')
@@ -66,11 +80,31 @@ class Register(Resource):
 			return jsonify('user add fail')
 		else:
 			print("{} User add: {} success...".format(time.strftime("%Y-%m-%d %H:%M:%S"), email))
-			return jsonify('user add success')
+			return jsonify(code = 0, message = 'user add success' , data = self.serialize_user(user))
 		finally:
 			db.session.close()
-
+class GetCurUserAPI(Resource):
+	user_fields = {
+    	'uid' : fields.Integer,
+    	'email' : fields.String,
+	}
+	@marshal_with(user_fields)
+	def serialize_user(self,user):
+		return user
+	def get(self):
+		if current_user.is_authenticated:
+			return jsonify(code = 0,message = 'get current_user success',data = self.serialize_user(current_user))
+		else:
+			return jsonify(code = -1,message = 'get current_user fail')
 class Logout(Resource):
+	user_fields = {
+    	'uid' : fields.Integer,
+    	'email' : fields.String
+	}
+	@marshal_with(user_fields)
+	def serialize_user(self,user):
+		return user
+
 	@login_required
 	def logout(self):
 		print(current_user)
@@ -79,5 +113,6 @@ class Logout(Resource):
 		print(current_user.is_authenticated)
 		return True
 	def get(self):
-	    if self.logout():
-	    	return jsonify('logout success')
+		print(11)
+		if self.logout():
+			return jsonify(code = 0,message = 'logout success')
