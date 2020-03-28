@@ -43,7 +43,7 @@ class Login(Resource):
 		finally:
 			db.session.close()
 		if user and user.varify_password(password):
-			login_user(user)
+			login_user(user,remember=True)
 			print('current_user')
 			print(current_user)
 			return jsonify(code = 0,message = 'login success',data = self.serialize_user(user))
