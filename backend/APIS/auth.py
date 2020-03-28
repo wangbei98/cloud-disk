@@ -25,7 +25,7 @@ class Login(Resource):
 	def post(self):
 		if current_user.is_authenticated:
 			# TODO
-			return jsonify(code=32,message = 'user already authenticated')
+			return jsonify(code=32,message = 'already authenticated')
 		parse = reqparse.RequestParser()
 		parse.add_argument('email',type=str,help='邮箱验证不通过',default='beiwang121@163.com')
 		parse.add_argument('password',type=str,help='密码验证不通过')
@@ -46,12 +46,12 @@ class Login(Resource):
 			login_user(user)
 			print('current_user')
 			print(current_user)
-			return jsonify(code = 0,message = 'user login success',data = self.serialize_user(user))
+			return jsonify(code = 0,message = 'login success',data = self.serialize_user(user))
 		else:
 			print('in if')
 			print("{} User query: {} failure...".format(time.strftime("%Y-%m-%d %H:%M:%S"), email))
 			print('user is None or password False')
-			return jsonify(code = 33,message = 'user login fail')
+			return jsonify(code = 33,message = 'login fail')
 		
 class Register(Resource):
 	user_fields = {
