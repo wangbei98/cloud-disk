@@ -282,11 +282,11 @@ class GetAllAPI(Resource):
 
 	@login_required
 	def get(self):
-		parse = reqparse.RequestParser()
-		parse.add_argument('curUid',type=int,help='错误的curId',default='0')
-		args = parse.parse_args()
+		# parse = reqparse.RequestParser()
+		# parse.add_argument('curUid',type=int,help='错误的curId',default='0')
+		# args = parse.parse_args()
 		# 获取当前文件夹id
-		cur_uid = args.get('curUid')# 获取当前文件夹id
+		# cur_uid = args.get('curUid')# 获取当前文件夹id
 		try:
 			# file_nodes = FileNode.query.filter_by(user_id=cur_uid)
 			file_nodes = current_user.files
