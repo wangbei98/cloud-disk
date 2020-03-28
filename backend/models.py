@@ -11,12 +11,14 @@ class FileNode(db.Model):
     id = db.Column(db.Integer,primary_key=True)
     filename = db.Column(db.String(50))
     path_root = db.Column(db.String(200))
-    parent_id = db.Column(db.Integer,default = 0)
+    # 默认存到根目录 （-1）
+    parent_id = db.Column(db.Integer,default = -1)
+    # 默认是文件夹
     type_of_node = db.Column(db.String(20),default='dir')
     size = db.Column(db.Integer,default = 0)
     upload_time = db.Column(db.Integer)
     # 所属用户
-    user_id = db.Column(db.Integer,db.ForeignKey('UserTable.uid'),default=0)
+    user_id = db.Column(db.Integer,db.ForeignKey('UserTable.uid'))
 
     # hdfs 相关
     hdfs_path = db.Column(db.String(50))
@@ -26,7 +28,7 @@ class UserTable(UserMixin,db.Model):
     __tablename__ = 'UserTable'
     uid = db.Column(db.Integer,primary_key=True)
     email = db.Column(db.String(100),unique=True,nullable=True)
-    password_hash = db.Column(db.String(100), nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
 
     files = db.relationship('FileNode')
 

@@ -62,25 +62,31 @@ FileNode
 * 10-19: 数据库
 * 20-29: 文件
 
-| code | Message                       | Data | 说明                       |
-| ---- | ----------------------------- | ---- | -------------------------- |
-| 0    |                               |      | 成功                       |
-| 10   | database error                |      | 未知数据库错误             |
-| 11   | node not exist, query fail    |      | 当前结点在数据库中不存在   |
-| 12   | node already exist , add fail |      | 目标结点已经存在，插入失败 |
-|      |                               |      |                            |
-| 20   | File error                    |      | 未知文件错误               |
-| 21   | file already exist, save fail |      | 文件已存在，保存失败       |
-| 22   | file not exist                |      | 目标文件不存在             |
-| 23   | illegal filename              |      | 文件名不合格               |
-| 24   | preview not allowed           |      | 文件不支持预览             |
-|      |                               |      |                            |
-|      |                               |      |                            |
-| 30   | user error                    |      | 用户相关错误               |
-| 31   | user not found                |      | 用户不存在                 |
-| 32   | already authenticated         |      | 用户已经登录               |
-| 33   | login fail                    |      | 登录失败                   |
-| 34   | user add fail                 |      |                            |
-| 35   | get current_user fail         |      |                            |
-|      |                               |      |                            |
+| code | Message                        | Data | 说明                       |
+| ---- | ------------------------------ | ---- | -------------------------- |
+| 0    |                                |      | 成功                       |
+| 10   | database error                 |      | 未知数据库错误             |
+| 11   | node not exist, query fail     |      | 当前结点在数据库中不存在   |
+| 12   | node already exist , add fail  |      | 目标结点已经存在，插入失败 |
+|      |                                |      |                            |
+| 20   | File error                     |      | 未知文件错误               |
+| 21   | file already exist, save fail  |      | 文件已存在，保存失败       |
+| 22   | file not exist                 |      | 目标文件不存在             |
+| 23   | illegal filename               |      | 文件名不合格               |
+| 24   | preview not allowed            |      | 文件不支持预览             |
+|      |                                |      |                            |
+|      |                                |      |                            |
+| 30   | user error                     |      | 用户相关错误               |
+| 31   | user not found                 |      | 用户不存在                 |
+| 32   | already authenticated          |      | 用户已经登录               |
+| 33   | login fail                     |      | 登录失败                   |
+| 34   | user add fail                  |      |                            |
+| 35   | get current_user fail          |      |                            |
+| 36   | user unauthorized,please login |      | 用户未登录                 |
 
+
+
+## 设计规约
+
+* id = -1 是根目录
+* uid = -1 是管理员账号

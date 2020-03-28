@@ -30,11 +30,13 @@ class UploadAPI(Resource):
 		'type_of_node':fields.String,
 		'size':fields.Integer,
 		'upload_time':fields.Integer,
-		'uid':fields.Integer
+		'user_id':fields.Integer
 	}
 	@marshal_with(file_fields)
 	def serialize_file(self,file):
 		return file
+
+	@login_required
 	def post(self):
 		# print(UPLOAD_FOLDER)
 		parse = reqparse.RequestParser()
@@ -74,7 +76,7 @@ class UploadAPI(Resource):
 				# 保存文件
 				f.save(target_file)
 				# print(filename + ' saved')
-				filenode = FileNode(filename=filename,path_root = new_path_root,parent_id = cur_file_id,type_of_node=filename.split('.')[-1],upload_time = d_time)
+				filenode = FileNode(filename=filename,path_root = new_path_root,parent_id = cur_file_id,type_of_node=filename.split('.')[-1],upload_time = d_time,user_id = current_user.uid)
 				db.session.add(filenode)
 				# print('db added filenode')
 				db.session.commit()
@@ -90,11 +92,12 @@ class GetInfoAPI(Resource):
 		'type_of_node':fields.String,
 		'size':fields.Integer,
 		'upload_time':fields.Integer,
-		'uid':fields.Integer
+		'user_id':fields.Integer
 	}
 	@marshal_with(file_fields)
 	def serialize_file(self,file):
 		return file
+	@login_required
 	def get(self):
 		parse = reqparse.RequestParser()
 		parse.add_argument('id',type=int,help='错误的id',default='0')
@@ -111,7 +114,6 @@ class GetInfoAPI(Resource):
 			return jsonify(code = 11,message='node not exist, query fail')
 		# 获取信息
 		return jsonify(code=0,num_of_children= num_of_children, data = self.serialize_file(file_node) ) 
-
 class DownloadFileAPI(Resource):
 	def generate(self,path):
 		with open(path, 'rb') as fd:
@@ -121,6 +123,7 @@ class DownloadFileAPI(Resource):
 					yield buf
 				else:
 					break
+	@login_required
 	def get(self):
 		parse = reqparse.RequestParser()
 		parse.add_argument('id',type=int,help='错误的id',default='0')
@@ -150,7 +153,6 @@ class DownloadFileAPI(Resource):
 			# return response
 		else:
 			return jsonify(code='22',message='file not exist')
-
 class ReNameAPI(Resource):
 	# 重命名文件
 	def reNameFile(self,target_file_node,new_name):
@@ -199,6 +201,7 @@ class ReNameAPI(Resource):
 			old_path_root[pos] = new_name
 			new_path_root = '/'.join(old_path_root)
 			child.path_root = new_path_root
+	@login_required
 	def post(self):
 		parse = reqparse.RequestParser()
 		parse.add_argument('id',type=int,help='错误的id',default='0')
@@ -231,11 +234,12 @@ class NewFolderAPI(Resource):
 		'type_of_node':fields.String,
 		'size':fields.Integer,
 		'upload_time':fields.Integer,
-		'uid':fields.Integer
+		'user_id':fields.Integer
 	}
 	@marshal_with(file_fields)
 	def serialize_file(self,file):
 		return file
+	@login_required
 	def post(self):
 		parse = reqparse.RequestParser()
 		parse.add_argument('curId',type=int,help='错误的curId',default='0')
@@ -244,15 +248,18 @@ class NewFolderAPI(Resource):
 		# 获取当前文件夹id
 		cur_file_id = args.get('curId')# 获取当前文件夹id
 		filename = args.get('foldername')# 获取新建文件夹的名称
-
-		cur_file_node = FileNode.query.get(cur_file_id)
+		try:
+			cur_file_node = FileNode.query.get(cur_file_id)
+		except:
+			return jsonify(code=11,message='node not exist, query fail')
 		cur_file_path_root = cur_file_node.path_root
 		cur_filename = cur_file_node.filename
 
 		new_path_root = cur_file_path_root + '/' + cur_filename
 		d_time = int(time.time())
 		try:
-			filenode = FileNode(filename=filename,path_root = new_path_root,parent_id = cur_file_id,upload_time = d_time)
+			print(current_user.uid)
+			filenode = FileNode(filename=filename,path_root = new_path_root,parent_id = cur_file_id,upload_time = d_time,user_id = current_user.uid)
 			db.session.add(filenode)
 			db.session.commit()
 			return jsonify(code=0,message='OK',data = self.serialize_file(filenode))
@@ -267,12 +274,13 @@ class GetAllAPI(Resource):
 		'type_of_node':fields.String,
 		'size':fields.Integer,
 		'upload_time':fields.Integer,
-		'uid':fields.Integer
+		'user_id':fields.Integer
 	}
 	@marshal_with(file_fields)
 	def serialize_file(self,file):
 		return file
 
+	@login_required
 	def get(self):
 		parse = reqparse.RequestParser()
 		parse.add_argument('curUid',type=int,help='错误的curId',default='0')
@@ -280,7 +288,8 @@ class GetAllAPI(Resource):
 		# 获取当前文件夹id
 		cur_uid = args.get('curUid')# 获取当前文件夹id
 		try:
-			file_nodes = FileNode.query.filter_by(user_id=cur_uid)
+			# file_nodes = FileNode.query.filter_by(user_id=cur_uid)
+			file_nodes = current_user.files
 			return jsonify(code = 0,data=[ self.serialize_file(file) for file in file_nodes])
 		except :
 			return jsonify(code=10,message='database error')
@@ -317,6 +326,7 @@ class DeleteAPI(Resource):
 			else:
 				self.deleteFile(child)
 			db.session.delete(child)
+	@login_required
 	def get(self):
 		parse = reqparse.RequestParser()
 		parse.add_argument('id',type=int,help='错误的id',default='0')
@@ -339,6 +349,7 @@ class DeleteAPI(Resource):
 		else: # 如果是删除文件
 			return	self.deleteFile(file_node)
 class PreviewAPI(Resource):
+	@login_required
 	def get(self):
 		parse = reqparse.RequestParser()
 		parse.add_argument('id',type=int,help='错误的id',default='0')
