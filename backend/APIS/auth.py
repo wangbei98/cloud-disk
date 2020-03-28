@@ -25,7 +25,7 @@ class Login(Resource):
 	def post(self):
 		if current_user.is_authenticated:
 			# TODO
-			return jsonify('already authenticated')
+			return jsonify(code=32,message = 'already authenticated')
 		parse = reqparse.RequestParser()
 		parse.add_argument('email',type=str,help='邮箱验证不通过',default='beiwang121@163.com')
 		parse.add_argument('password',type=str,help='密码验证不通过')
@@ -37,7 +37,7 @@ class Login(Resource):
 			user = UserTable.query.filter_by(email=email).first()
 		except:
 			print("{} User query: {} failure......".format(time.strftime("%Y-%m-%d %H:%M:%S"),email))
-			return jsonify('user not found')
+			return jsonify(code = 31,message = 'user not found')
 		else:
 			print("{} User query: {} success...".format(time.strftime("%Y-%m-%d %H:%M:%S"), email))
 		finally:
@@ -51,7 +51,7 @@ class Login(Resource):
 			print('in if')
 			print("{} User query: {} failure...".format(time.strftime("%Y-%m-%d %H:%M:%S"), email))
 			print('user is None or password False')
-			return jsonify('login fail')
+			return jsonify(code = 33,message = 'login fail')
 		
 class Register(Resource):
 	user_fields = {
@@ -77,7 +77,7 @@ class Register(Resource):
 		except:
 			print("{} User add: {} failure...".format(time.strftime("%Y-%m-%d %H:%M:%S"), email))
 			db.session.rollback()
-			return jsonify('user add fail')
+			return jsonify(code=34,message = 'user add fail')
 		else:
 			print("{} User add: {} success...".format(time.strftime("%Y-%m-%d %H:%M:%S"), email))
 			return jsonify(code = 0, message = 'user add success' , data = self.serialize_user(user))
@@ -95,7 +95,7 @@ class GetCurUserAPI(Resource):
 		if current_user.is_authenticated:
 			return jsonify(code = 0,message = 'get current_user success',data = self.serialize_user(current_user))
 		else:
-			return jsonify(code = -1,message = 'get current_user fail')
+			return jsonify(code = 35,message = 'get current_user fail')
 class Logout(Resource):
 	user_fields = {
     	'uid' : fields.Integer,

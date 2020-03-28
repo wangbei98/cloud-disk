@@ -74,4 +74,13 @@ FileNode
 | 22   | file not exist                |      | 目标文件不存在             |
 | 23   | illegal filename              |      | 文件名不合格               |
 | 24   | preview not allowed           |      | 文件不支持预览             |
+|      |                               |      |                            |
+|      |                               |      |                            |
+| 30   | user error                    |      | 用户相关错误               |
+| 31   | user not found                |      | 用户不存在                 |
+| 32   | already authenticated         |      | 用户已经登录               |
+| 33   | login fail                    |      | 登录失败                   |
+| 34   | user add fail                 |      |                            |
+| 35   | get current_user fail         |      |                            |
+|      |                               |      |                            |
 
