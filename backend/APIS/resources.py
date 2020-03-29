@@ -12,11 +12,13 @@ from flask_restful import Api,Resource,fields,marshal_with,marshal_with_field,re
 from flask_login import LoginManager,UserMixin,login_user, logout_user, current_user, login_required
 from models import FileNode,UserTable
 from extensions import db,login_manager
+from utils import generate_token,verify_token,token_required
 from werkzeug.datastructures import FileStorage
 from settings import config
 from flask import send_file,make_response,send_from_directory,stream_with_context
 from PIL import Image
 import io
+
 
 UPLOAD_FOLDER = config['UPLOAD_FOLDER']
 CHUNK_SIZE = config['CHUNK_SIZE']
@@ -349,21 +351,29 @@ class DeleteAPI(Resource):
 		else: # 如果是删除文件
 			return	self.deleteFile(file_node)
 class PreviewAPI(Resource):
-	@login_required
+	@token_required
 	def get(self):
 		parse = reqparse.RequestParser()
 		parse.add_argument('id',type=int,help='错误的id',default='0')
 		parse.add_argument('width',type=int,help='wrong width',default=300)
 		parse.add_argument('height',type=int,help='wrong height',default=300)
+		parse.add_argument('token',type=str,help='wrong token')
 		args = parse.parse_args()
 		# 获取当前文件夹id
 		file_id = args.get('id')
 		width = args.get('width')
 		height = args.get('height')
+		token = args.get('token')
+		try:
+			user = verify_token(token)
+		except:
+			jsonify(code=38,message='wront token')
 		try:
 			file_node = FileNode.query.get(file_id)
 		except:
 			return jsonify(code = 11,message='node not exist, query fail')
+		if file_node.user_id != user.uid:
+			return jsonify(code=38,message='wrong')
 		if file_node == None:
 			return jsonify(code = 11,message='node not exist, query fail')
 		if file_node.type_of_node in ['jpeg','jpg','png']:
@@ -386,7 +396,7 @@ class PreviewAPI(Resource):
 				response.headers['Content-Type'] = 'image/' + node_type
 				return response
 			else:
-				return jsonify(code='22',message='file not exist')
+				return jsonify(code=22,message='file not exist')
 		else:
 			return jsonify(code = 24,message='preview not allowed')
 

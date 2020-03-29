@@ -11,6 +11,7 @@ from flask_restful import Api,Resource,fields,marshal_with,marshal_with_field,re
 from flask_login import LoginManager,UserMixin,login_user, logout_user, current_user, login_required
 from models import FileNode,UserTable
 from extensions import db,login_manager
+from utils import generate_token
 
 
 # apis
@@ -44,9 +45,10 @@ class Login(Resource):
 			db.session.close()
 		if user and user.varify_password(password):
 			login_user(user,remember=True)
+			token = generate_token(current_user.uid)
 			print('current_user')
 			print(current_user)
-			return jsonify(code = 0,message = 'login success',data = self.serialize_user(user))
+			return jsonify(code = 0,message = 'login success',data = self.serialize_user(user),token=token)
 		else:
 			print('in if')
 			print("{} User query: {} failure...".format(time.strftime("%Y-%m-%d %H:%M:%S"), email))
@@ -96,6 +98,13 @@ class GetCurUserAPI(Resource):
 			return jsonify(code = 0,message = 'get current_user success',data = self.serialize_user(current_user))
 		else:
 			return jsonify(code = 35,message = 'get current_user fail')
+
+class GenerateToken(Resource):
+	@login_required
+	def get(self):
+		token = generate_token(current_user.uid)
+		return jsonify(code=0,data={'token':token})
+
 class Logout(Resource):
 	user_fields = {
     	'uid' : fields.Integer,

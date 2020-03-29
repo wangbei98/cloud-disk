@@ -15,9 +15,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_restful import Api,Resource,fields,marshal_with,marshal_with_field,reqparse
 from flask_login import LoginManager,UserMixin,login_user, logout_user, current_user, login_required
 from extensions import db,login_manager
-from APIS.auth import Login,Register,Logout,GetCurUserAPI
+from APIS.auth import Login,Register,Logout,GetCurUserAPI,GenerateToken
 from APIS.resources import UploadAPI,GetInfoAPI,DownloadFileAPI,ReNameAPI,NewFolderAPI,GetAllAPI,DeleteAPI,PreviewAPI
 from models import UserTable,FileNode
+from settings import config
 
 # SQLite URI compatiblec
 WIN = sys.platform.startswith('win')
@@ -31,7 +32,7 @@ app = Flask(__name__)
 # app.jinja_env.trim_blocks = True
 # app.jinja_env.lstrip_blocks = True
 
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'secret string')
+app.config['SECRET_KEY'] = config['SECRET_KEY']
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', prefix + os.path.join(app.root_path, 'disk.db'))
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path,'upload')
@@ -87,6 +88,7 @@ api.add_resource(Login, '/api/login', endpoint='login')
 api.add_resource(Register, '/api/register', endpoint='register')
 api.add_resource(Logout,'/api/logout',endpoint='logout')
 
+api.add_resource(GenerateToken,'/api/user/generatetoken',endpoint='generatetoken')
 api.add_resource(GetCurUserAPI,'/api/user/getcur',endpoint = 'getcur')
 
 api.add_resource(UploadAPI,'/api/file/upload',endpoint='upload')

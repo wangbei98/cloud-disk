@@ -83,6 +83,11 @@ FileNode
 | 34   | user add fail                  |      |                            |
 | 35   | get current_user fail          |      |                            |
 | 36   | user unauthorized,please login |      | 用户未登录                 |
+| 37   | token out of date              |      | token 过期                 |
+| 38   | wront token                    |      | token 错误                 |
+|      |                                |      |                            |
+|      |                                |      |                            |
+|      |                                |      |                            |
 
 
 
