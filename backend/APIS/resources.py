@@ -85,7 +85,7 @@ class UploadAPI(Resource):
 				db.session.add(filenode)
 				# print('db added filenode')
 				db.session.commit()
-				response = make_response(jsonify(code=0,message='OK',data = {'user':self.serialize_file(filenode)}))
+				response = make_response(jsonify(code=0,message='OK',data = {'file':self.serialize_file(filenode)}))
 				return response
 			except:
 				response = make_response(jsonify(code=12,message='node already exist , add fail'))
@@ -122,7 +122,7 @@ class GetInfoAPI(Resource):
 			response = make_response(jsonify(code = 11,message='node not exist, query fail'))
 			return response
 		# 获取信息
-		response = make_response(jsonify(code=0,num_of_children= num_of_children, data = {'user':self.serialize_file(file_node)} ))
+		response = make_response(jsonify(code=0,num_of_children= num_of_children, data = {'file':self.serialize_file(file_node)} ))
 		return  response
 class DownloadFileAPI(Resource):
 	def generate(self,path):
