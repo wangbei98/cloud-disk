@@ -48,8 +48,9 @@ class UploadAPI(Resource):
 		args = parse.parse_args()
 		# 获取当前文件夹id
 		cur_file_id = args.get('curId')
+
 		f = args['file']
-		fsize = len(f.read())
+		# f.close()
 		if "/" in f.filename:
 			response = make_response(jsonify(code=23,message = 'filename should not has separator'))
 			return response
@@ -82,6 +83,7 @@ class UploadAPI(Resource):
 				# 保存文件
 				f.save(target_file)
 				# print(filename + ' saved')
+				fsize = os.path.getsize(target_file)
 				filenode = FileNode(filename=filename,path_root = new_path_root,parent_id = cur_file_id,size = fsize,type_of_node=filename.split('.')[-1].lower(),upload_time = d_time,user_id = current_user.uid)
 				db.session.add(filenode)
 				# print('db added filenode')
@@ -272,6 +274,9 @@ class NewFolderAPI(Resource):
 		except:
 			response = make_response(jsonify(code=11,message='node not exist, query fail'))
 			return response
+		if cur_file_node == None:
+			response = make_response(jsonify(code=11,message='node not exist, query fail'))
+			return response
 		cur_file_path_root = cur_file_node.path_root
 		cur_filename = cur_file_node.filename
 
@@ -417,16 +422,21 @@ class PreviewAPI(Resource):
 				# 结合 UPLOAD_FOLDER 得到最终文件的存储路径
 			target_file = os.path.join(os.path.expanduser(UPLOAD_FOLDER), actual_filename)
 			if os.path.exists(target_file):
-				img_data = Image.open(target_file)
-				img_data.thumbnail((width,height))
+				try:
+					with Image.open(target_file,mode='r') as img_data:
+					# img_data = Image.open(target_file)
+						img_data.thumbnail((width,height))
 
-				fp = io.BytesIO()
-				format = Image.registered_extensions()['.'+node_type]
-				img_data.save(fp, format)
+						fp = io.BytesIO()
+						format = Image.registered_extensions()['.'+node_type]
+						img_data.save(fp, format)
 
-				response = make_response(fp.getvalue())
-				response.headers['Content-Type'] = 'image/' + node_type
-				return response
+						response = make_response(fp.getvalue())
+						response.headers['Content-Type'] = 'image/' + node_type
+						return response
+				except:
+					response = make_response(jsonify(code = 24,message='preview not allowed'))
+					return response
 			else:
 				response = make_response(jsonify(code=22,message='file not exist'))
 				return response
