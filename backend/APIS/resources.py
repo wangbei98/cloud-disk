@@ -130,7 +130,7 @@ class GetInfoAPI(Resource):
 			response = make_response(jsonify(code=25,message='can not access this file'))
 			return response
 		# 获取信息
-		response = make_response(jsonify(code=0,data = {'file':self.serialize_file(file_node)',num_of_children':num_of_children} ))
+		response = make_response(jsonify(code=0,data = {'file':self.serialize_file(file_node),'num_of_children':num_of_children} ))
 		return  response
 class DownloadFileAPI(Resource):
 	def generate(self,path):
@@ -382,7 +382,7 @@ class DeleteAPI(Resource):
 		except Exception as e:
 			response = make_response(jsonify(message='error'))
 			return response
-		
+
 		if file_node.user_id != current_user.uid:
 			response = make_response(jsonify(code=25,message='can not access this file'))
 			return response
