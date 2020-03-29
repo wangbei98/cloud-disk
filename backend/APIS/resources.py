@@ -50,11 +50,13 @@ class UploadAPI(Resource):
 		cur_file_id = args.get('curId')
 		f = args['file']
 		if "/" in f.filename:
-			return jsonify(code=23,message = 'filename should not has separator')
+			response = make_response(jsonify(code=23,message = 'filename should not has separator'))
+			return response
 		try:
 			cur_file_node = FileNode.query.get(cur_file_id)
 		except:
-			return jsonify(code=11,message='illegal filename')
+			response = make_response(jsonify(code=11,message='illegal filename'))
+			return response
 		cur_file_path_root = cur_file_node.path_root
 		cur_filename = cur_file_node.filename
 		
@@ -73,7 +75,8 @@ class UploadAPI(Resource):
 			target_file = os.path.join(os.path.expanduser(UPLOAD_FOLDER), actual_filename)
 
 			if os.path.exists(target_file):
-				return jsonify(code=21,message='file already exist, save fail')
+				response = make_response(jsonify(code=21,message='file already exist, save fail'))
+				return response
 			try:
 				# 保存文件
 				f.save(target_file)
@@ -82,9 +85,11 @@ class UploadAPI(Resource):
 				db.session.add(filenode)
 				# print('db added filenode')
 				db.session.commit()
-				return jsonify(code=0,message='OK',data = self.serialize_file(filenode))
+				response = make_response(jsonify(code=0,message='OK',data = {'user':self.serialize_file(filenode)}))
+				return response
 			except:
-				return jsonify(code=12,message='node already exist , add fail')
+				response = make_response(jsonify(code=12,message='node already exist , add fail'))
+				return response
 class GetInfoAPI(Resource):
 	file_fields={
 		'id':fields.Integer,
@@ -111,11 +116,14 @@ class GetInfoAPI(Resource):
 			child = FileNode.query.filter_by(parent_id=file_id).all()
 			num_of_children = len(child)
 		except:
-			return jsonify(code = 11,message='node not exist, query fail')
+			response = make_response(jsonify(code = 11,message='node not exist, query fail'))
+			return response
 		if file_node == None:
-			return jsonify(code = 11,message='node not exist, query fail')
+			response = make_response(jsonify(code = 11,message='node not exist, query fail'))
+			return response
 		# 获取信息
-		return jsonify(code=0,num_of_children= num_of_children, data = self.serialize_file(file_node) ) 
+		response = make_response(jsonify(code=0,num_of_children= num_of_children, data = {'user':self.serialize_file(file_node)} ))
+		return  response
 class DownloadFileAPI(Resource):
 	def generate(self,path):
 		with open(path, 'rb') as fd:
@@ -135,7 +143,8 @@ class DownloadFileAPI(Resource):
 		try:
 			file_node = FileNode.query.get(file_id)
 		except:
-			return jsonify(code=11,message='node not exist, query fail')
+			response = make_response(jsonify(code=11,message='node not exist, query fail'))
+			return response
 		
 		parent_id = file_node.parent_id
 		filename = file_node.filename
@@ -154,7 +163,8 @@ class DownloadFileAPI(Resource):
 			# response.headers["Content-disposition"] = "attachment; filename={}".format(filename.encode().decode('latin-1'))
 			# return response
 		else:
-			return jsonify(code='22',message='file not exist')
+			response = make_response(jsonify(code='22',message='file not exist'))
+			return response
 class ReNameAPI(Resource):
 	# 重命名文件
 	def reNameFile(self,target_file_node,new_name):
@@ -178,9 +188,11 @@ class ReNameAPI(Resource):
 			target_file_node.filename = new_name# 修改当前文件的名字
 			print('4')
 			db.session.commit()
-			return jsonify(code = 0,message='OK')
+			response = make_response(jsonify(code = 0,message='OK'))
+			return response
 		except:
-			return jsonify(code=20,message='file error')
+			response = make_response(jsonify(code=20,message='file error'))
+			return response
 	# 递归修改孩子的路径
 	# parent_node 需要修改路径的孩子的父节点
 	# new_name 修改后的文件名
@@ -190,7 +202,8 @@ class ReNameAPI(Resource):
 			# 获取所有孩子节点
 			children = FileNode.query.filter_by(parent_id=parent_node.id).all()
 		except:
-			return jsonify(code = 10,message='database error')
+			response = make_response(jsonify(code = 10,message='database error'))
+			return response
 		pos = n * (-1)
 		if children == None:
 			return
@@ -215,16 +228,19 @@ class ReNameAPI(Resource):
 		try:
 			target_file_node = FileNode.query.get(file_id)
 		except Exception as e:
-			return jsonify(code=11,message='node not exist, query fail')
+			response = make_response(jsonify(code=11,message='node not exist, query fail'))
+			return response
 		if target_file_node.type_of_node=='dir':# 如果是要修改目录的名字
 			# TODO : 递归修改 path_root
 			try:
 				target_file_node.filename = new_name# 先修改当前目录的名字
 				self.changeChildrenPath(target_file_node,new_name,2)
 				db.session.commit()
-				return jsonify(code=0,message='OK')
+				response = make_response(jsonify(code=0,message='OK'))
+				return response
 			except:
-				return jsonify(code=10,message='database error')
+				response = make_response(jsonify(code=10,message='database error'))
+				return response
 		else:# 如果修改的是文件
 			return self.reNameFile(target_file_node,new_name)
 class NewFolderAPI(Resource):
@@ -253,7 +269,8 @@ class NewFolderAPI(Resource):
 		try:
 			cur_file_node = FileNode.query.get(cur_file_id)
 		except:
-			return jsonify(code=11,message='node not exist, query fail')
+			response = make_response(jsonify(code=11,message='node not exist, query fail'))
+			return response
 		cur_file_path_root = cur_file_node.path_root
 		cur_filename = cur_file_node.filename
 
@@ -264,9 +281,11 @@ class NewFolderAPI(Resource):
 			filenode = FileNode(filename=filename,path_root = new_path_root,parent_id = cur_file_id,upload_time = d_time,user_id = current_user.uid)
 			db.session.add(filenode)
 			db.session.commit()
-			return jsonify(code=0,message='OK',data = self.serialize_file(filenode))
+			response = make_response(jsonify(code=0,message='OK',data = {'file':self.serialize_file(filenode)}))
+			return response
 		except:
-			return jsonify(code = 12,message='node already exist , add fail')
+			response = make_response(jsonify(code = 12,message='node already exist , add fail'))
+			return response
 class GetAllAPI(Resource):
 	file_fields={
 		'id':fields.Integer,
@@ -292,9 +311,11 @@ class GetAllAPI(Resource):
 		try:
 			# file_nodes = FileNode.query.filter_by(user_id=cur_uid)
 			file_nodes = current_user.files
-			return jsonify(code = 0,data=[ self.serialize_file(file) for file in file_nodes])
+			response = make_response(jsonify(code = 0,data={'files':[ self.serialize_file(file) for file in file_nodes]}))
+			return response
 		except :
-			return jsonify(code=10,message='database error')
+			response = make_response(jsonify(code=10,message='database error'))
+			return response
 class DeleteAPI(Resource):
 	def deleteFile(self,target_file_node):
 		try:
@@ -309,15 +330,18 @@ class DeleteAPI(Resource):
 			# 修改数据库中的文件名
 			db.session.delete(target_file_node)
 			db.session.commit()
-			return jsonify(code = 0,message='OK')
+			response = make_response(jsonify(code = 0,message='OK'))
+			return response
 		except:
-			return jsonify(code=20,message='file error')
+			response = make_response(jsonify(code=20,message='file error'))
+			return response
 	def deleteChildren(self,parent_node):
 		try:
 			# 获取所有孩子节点
 			children = FileNode.query.filter_by(parent_id=parent_node.id).all()
 		except:
-			return jsonify(code = 10,message='database error')
+			response = make_response(jsonify(code = 10,message='database error'))
+			return response
 		if children == None:
 			return
 		for child in children:
@@ -338,16 +362,19 @@ class DeleteAPI(Resource):
 		try:
 			file_node = FileNode.query.get(file_id)
 		except Exception as e:
-			return jsonify(message='error')
+			response = make_response(jsonify(message='error'))
+			return response
 
 		if file_node.type_of_node == 'dir':# 如果删除的是文件夹
 			try:
 				self.deleteChildren(file_node)
 				db.session.delete(file_node)
 				db.session.commit()
-				return jsonify(code=0,message='OK')
+				response = make_response(jsonify(code=0,message='OK'))
+				return response
 			except:
-				return jsonify(code=10,message='database error')
+				response = make_response(jsonify(code=10,message='database error'))
+				return response
 		else: # 如果是删除文件
 			return	self.deleteFile(file_node)
 class PreviewAPI(Resource):
@@ -367,15 +394,19 @@ class PreviewAPI(Resource):
 		try:
 			user = verify_token(token)
 		except:
-			jsonify(code=38,message='wrong token')
+			response = make_response(jsonify(code=38,message='wrong token'))
+			return response
 		try:
 			file_node = FileNode.query.get(file_id)
 		except:
-			return jsonify(code = 11,message='node not exist, query fail')
+			response = make_response(jsonify(code = 11,message='node not exist, query fail'))
+			return response
 		if file_node.user_id != user.uid:
-			return jsonify(code=38,message='wrong token')
+			response = make_response(jsonify(code=38,message='wrong token'))
+			return response
 		if file_node == None:
-			return jsonify(code = 11,message='node not exist, query fail')
+			response = make_response(jsonify(code = 11,message='node not exist, query fail'))
+			return response
 		if file_node.type_of_node in config['IMG_TYPE']:
 			parent_id = file_node.parent_id
 			filename = file_node.filename
@@ -396,9 +427,11 @@ class PreviewAPI(Resource):
 				response.headers['Content-Type'] = 'image/' + node_type
 				return response
 			else:
-				return jsonify(code=22,message='file not exist')
+				response = make_response(jsonify(code=22,message='file not exist'))
+				return response
 		else:
-			return jsonify(code = 24,message='preview not allowed')
+			response = make_response(jsonify(code = 24,message='preview not allowed'))
+			return response
 
 
 # 辅助函数

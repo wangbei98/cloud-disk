@@ -4,7 +4,7 @@ import json
 import time
 import click
 from flask import Flask,request,abort
-from flask import jsonify
+from flask import jsonify,make_response
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_restful import Api,Resource,fields,marshal_with,marshal_with_field,reqparse
@@ -26,7 +26,8 @@ class Login(Resource):
 	def post(self):
 		if current_user.is_authenticated:
 			# TODO
-			return jsonify(code=32,message = 'already authenticated')
+			response = make_response(jsonify(code=32,message = 'already authenticated'))
+			return response
 		parse = reqparse.RequestParser()
 		parse.add_argument('email',type=str,help='邮箱验证不通过',default='beiwang121@163.com')
 		parse.add_argument('password',type=str,help='密码验证不通过')
@@ -38,7 +39,8 @@ class Login(Resource):
 			user = UserTable.query.filter_by(email=email).first()
 		except:
 			print("{} User query: {} failure......".format(time.strftime("%Y-%m-%d %H:%M:%S"),email))
-			return jsonify(code = 31,message = 'user not found')
+			response = make_response(jsonify(code = 31,message = 'user not found'))
+			return response
 		else:
 			print("{} User query: {} success...".format(time.strftime("%Y-%m-%d %H:%M:%S"), email))
 		finally:
@@ -48,12 +50,15 @@ class Login(Resource):
 			token = generate_token(current_user.uid)
 			print('current_user')
 			print(current_user)
-			return jsonify(code = 0,message = 'login success',data = self.serialize_user(user),token=token)
+			response = jsonify(code = 0,message = 'login success',data ={'user': self.serialize_user(user)})
+			response.set_cookie('token',token)
+			return response
 		else:
 			print('in if')
 			print("{} User query: {} failure...".format(time.strftime("%Y-%m-%d %H:%M:%S"), email))
 			print('user is None or password False')
-			return jsonify(code = 33,message = 'login fail')
+			response = make_response(jsonify(code = 33,message = 'login fail'))
+			return response
 		
 class Register(Resource):
 	user_fields = {
@@ -79,10 +84,12 @@ class Register(Resource):
 		except:
 			print("{} User add: {} failure...".format(time.strftime("%Y-%m-%d %H:%M:%S"), email))
 			db.session.rollback()
-			return jsonify(code=34,message = 'user add fail')
+			response = make_response(jsonify(code=34,message = 'user add fail'))
+			return response
 		else:
 			print("{} User add: {} success...".format(time.strftime("%Y-%m-%d %H:%M:%S"), email))
-			return jsonify(code = 0, message = 'user add success' , data = self.serialize_user(user))
+			response = make_response(jsonify(code = 0, message = 'user add success' , data ={'user': self.serialize_user(user)}))
+			return response
 		finally:
 			db.session.close()
 class GetCurUserAPI(Resource):
@@ -95,15 +102,19 @@ class GetCurUserAPI(Resource):
 		return user
 	def get(self):
 		if current_user.is_authenticated:
-			return jsonify(code = 0,message = 'get current_user success',data = self.serialize_user(current_user))
+			response = make_response(jsonify(code = 0,message = 'get current_user success',data ={'user':self.serialize_user(current_user)}))
+			return response
 		else:
-			return jsonify(code = 35,message = 'get current_user fail')
+			response = make_response(jsonify(code = 35,message = 'get current_user fail'))
+			return response
 
-class GenerateToken(Resource):
+class RefreshTokenAPI(Resource):
 	@login_required
 	def get(self):
 		token = generate_token(current_user.uid)
-		return jsonify(code=0,data={'token':token})
+		response = make_response(jsonify(code=0,message='OK'))
+		response.set_cookie('token',token)
+		return response
 
 class Logout(Resource):
 	user_fields = {
@@ -124,4 +135,5 @@ class Logout(Resource):
 	def get(self):
 		print(11)
 		if self.logout():
-			return jsonify(code = 0,message = 'logout success')
+			response = make_response(jsonify(code = 0,message = 'logout success'))
+			return response
