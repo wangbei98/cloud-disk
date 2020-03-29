@@ -49,6 +49,7 @@ class UploadAPI(Resource):
 		# 获取当前文件夹id
 		cur_file_id = args.get('curId')
 		f = args['file']
+		fsize = len(f.read())
 		if "/" in f.filename:
 			response = make_response(jsonify(code=23,message = 'filename should not has separator'))
 			return response
@@ -81,7 +82,7 @@ class UploadAPI(Resource):
 				# 保存文件
 				f.save(target_file)
 				# print(filename + ' saved')
-				filenode = FileNode(filename=filename,path_root = new_path_root,parent_id = cur_file_id,type_of_node=filename.split('.')[-1].lower(),upload_time = d_time,user_id = current_user.uid)
+				filenode = FileNode(filename=filename,path_root = new_path_root,parent_id = cur_file_id,size = fsize,type_of_node=filename.split('.')[-1].lower(),upload_time = d_time,user_id = current_user.uid)
 				db.session.add(filenode)
 				# print('db added filenode')
 				db.session.commit()
