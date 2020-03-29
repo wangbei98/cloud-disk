@@ -65,7 +65,7 @@ class UploadAPI(Resource):
 			# print(filename[:-1])
 			if '\"' in filename:
 				filename = filename[:-1]
-			new_path_root = cur_file_path_root + '/' + cur_filename
+			new_path_root = cur_file_path_root  + cur_filename + '/'
 			d_time = int(time.time())
 			# 生成文件名的 hash
 			actual_filename = generate_file_name(cur_file_id, filename)
@@ -220,7 +220,7 @@ class ReNameAPI(Resource):
 			# TODO : 递归修改 path_root
 			try:
 				target_file_node.filename = new_name# 先修改当前目录的名字
-				self.changeChildrenPath(target_file_node,new_name,1)
+				self.changeChildrenPath(target_file_node,new_name,2)
 				db.session.commit()
 				return jsonify(code=0,message='OK')
 			except:
@@ -257,7 +257,7 @@ class NewFolderAPI(Resource):
 		cur_file_path_root = cur_file_node.path_root
 		cur_filename = cur_file_node.filename
 
-		new_path_root = cur_file_path_root + '/' + cur_filename
+		new_path_root = cur_file_path_root + cur_filename + '/'
 		d_time = int(time.time())
 		try:
 			print(current_user.uid)
