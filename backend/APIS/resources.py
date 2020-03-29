@@ -78,7 +78,7 @@ class UploadAPI(Resource):
 				# 保存文件
 				f.save(target_file)
 				# print(filename + ' saved')
-				filenode = FileNode(filename=filename,path_root = new_path_root,parent_id = cur_file_id,type_of_node=filename.split('.')[-1],upload_time = d_time,user_id = current_user.uid)
+				filenode = FileNode(filename=filename,path_root = new_path_root,parent_id = cur_file_id,type_of_node=filename.split('.')[-1].lower(),upload_time = d_time,user_id = current_user.uid)
 				db.session.add(filenode)
 				# print('db added filenode')
 				db.session.commit()

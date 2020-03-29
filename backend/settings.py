@@ -8,5 +8,5 @@ config={
 	'PHOTO_TYPES':['png', 'jpg', 'JPG', 'PNG', 'gif', 'GIF'],
 	'SECRET_KEY':'wangbei',
 	'EXPIRES_TIME':86400,
-	'IMG_TYPE':['jpeg','jpg','png','PNG','JPG','JPEG','GIF','gif']
+	'IMG_TYPE':['jpeg','jpg','png','gif']
 }
