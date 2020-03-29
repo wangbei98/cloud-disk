@@ -367,13 +367,13 @@ class PreviewAPI(Resource):
 		try:
 			user = verify_token(token)
 		except:
-			jsonify(code=38,message='wront token')
+			jsonify(code=38,message='wrong token')
 		try:
 			file_node = FileNode.query.get(file_id)
 		except:
 			return jsonify(code = 11,message='node not exist, query fail')
 		if file_node.user_id != user.uid:
-			return jsonify(code=38,message='wrong')
+			return jsonify(code=38,message='wrong token')
 		if file_node == None:
 			return jsonify(code = 11,message='node not exist, query fail')
 		if file_node.type_of_node in config['IMG_TYPE']:

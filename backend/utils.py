@@ -44,7 +44,7 @@ def token_required(view_func):
 		try:
 			s.loads(token)
 		except Exception:
-			return jsonify(code = 38,msg = "wront token")
+			return jsonify(code = 38,msg = "wrong token")
 
 		return view_func(*args,**kwargs)
 
