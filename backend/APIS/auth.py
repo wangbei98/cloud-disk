@@ -136,4 +136,5 @@ class Logout(Resource):
 		print(11)
 		if self.logout():
 			response = make_response(jsonify(code = 0,message = 'logout success'))
+			response.set_cookie('token','')
 			return response
