@@ -7,5 +7,6 @@ config={
 	'CHUNK_SIZE':1024,
 	'PHOTO_TYPES':['png', 'jpg', 'JPG', 'PNG', 'gif', 'GIF'],
 	'SECRET_KEY':'wangbei',
-	'EXPIRES_TIME':86400
+	'EXPIRES_TIME':86400,
+	'IMG_TYPE':['jpeg','jpg','png','PNG','JPG','JPEG','GIF','gif']
 }

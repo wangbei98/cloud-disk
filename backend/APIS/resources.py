@@ -376,7 +376,7 @@ class PreviewAPI(Resource):
 			return jsonify(code=38,message='wrong')
 		if file_node == None:
 			return jsonify(code = 11,message='node not exist, query fail')
-		if file_node.type_of_node in ['jpeg','jpg','png']:
+		if file_node.type_of_node in config['IMG_TYPE']:
 			parent_id = file_node.parent_id
 			filename = file_node.filename
 			node_type = file_node.type_of_node
