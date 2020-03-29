@@ -114,6 +114,7 @@ class GetInfoAPI(Resource):
 		args = parse.parse_args()
 		# 获取当前文件夹id
 		file_id = args.get('id')
+		# TODO：优化，避免全表扫描
 		try:
 			file_node = FileNode.query.get(file_id)
 			child = FileNode.query.filter_by(parent_id=file_id).all()
@@ -124,8 +125,12 @@ class GetInfoAPI(Resource):
 		if file_node == None:
 			response = make_response(jsonify(code = 11,message='node not exist, query fail'))
 			return response
+		# 此文件不属于当前用户
+		if file_node.user_id != current_user.uid:
+			response = make_response(jsonify(code=25,message='can not access this file'))
+			return response
 		# 获取信息
-		response = make_response(jsonify(code=0,num_of_children= num_of_children, data = {'file':self.serialize_file(file_node)} ))
+		response = make_response(jsonify(code=0,data = {'file':self.serialize_file(file_node)',num_of_children':num_of_children} ))
 		return  response
 class DownloadFileAPI(Resource):
 	def generate(self,path):
@@ -147,6 +152,10 @@ class DownloadFileAPI(Resource):
 			file_node = FileNode.query.get(file_id)
 		except:
 			response = make_response(jsonify(code=11,message='node not exist, query fail'))
+			return response
+		# 无访问权限
+		if file_node.user_id != current_user.uid:
+			response = make_response(jsonify(code=25,message='can not access this file'))
 			return response
 		
 		parent_id = file_node.parent_id
@@ -232,6 +241,9 @@ class ReNameAPI(Resource):
 			target_file_node = FileNode.query.get(file_id)
 		except Exception as e:
 			response = make_response(jsonify(code=11,message='node not exist, query fail'))
+			return response
+		if target_file_node.user_id != current_user.uid:
+			response = make_response(jsonify(code=25,message='can not access this file'))
 			return response
 		if target_file_node.type_of_node=='dir':# 如果是要修改目录的名字
 			# TODO : 递归修改 path_root
@@ -370,7 +382,10 @@ class DeleteAPI(Resource):
 		except Exception as e:
 			response = make_response(jsonify(message='error'))
 			return response
-
+		
+		if file_node.user_id != current_user.uid:
+			response = make_response(jsonify(code=25,message='can not access this file'))
+			return response
 		if file_node.type_of_node == 'dir':# 如果删除的是文件夹
 			try:
 				self.deleteChildren(file_node)

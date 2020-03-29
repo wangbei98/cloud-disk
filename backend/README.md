@@ -74,7 +74,7 @@ FileNode
 | 22   | file not exist                 |      | 目标文件不存在             |
 | 23   | illegal filename               |      | 文件名不合格               |
 | 24   | preview not allowed            |      | 文件不支持预览             |
-|      |                                |      |                            |
+| 25   | can not access this file       |      | 无访问权限                 |
 |      |                                |      |                            |
 | 30   | user error                     |      | 用户相关错误               |
 | 31   | user not found                 |      | 用户不存在                 |
