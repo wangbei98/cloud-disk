@@ -19,6 +19,9 @@ from APIS.auth import Login,Register,Logout,GetCurUserAPI,RefreshTokenAPI
 from APIS.resources import UploadAPI,GetInfoAPI,DownloadFileAPI,ReNameAPI,NewFolderAPI,GetAllAPI,DeleteAPI,PreviewAPI
 from models import UserTable,FileNode
 from settings import config
+import logging
+from logging.handlers import RotatingFileHandler
+
 
 # SQLite URI compatiblec
 WIN = sys.platform.startswith('win')
@@ -42,6 +45,15 @@ api = Api(app)
 login = LoginManager(app)
 db.init_app(app)
 login_manager.init_app(app)
+
+# logging
+app.logger.setLevel(logging.INFO)
+formatter = logging.Formatter('%(astime)s - %(name)s - %(levelname)s - %(message)s ')
+file_handler = RotatingFileHandler('logs/cloud-disk.log',maxBytes=10*1024*1024,backupCount=10)
+file_handler.setFormatter(formatter)
+file_handler.setLevel(logging.INFO)
+if not app.debug:
+    app.logger.addHandler(file_handler)
 
 
 
