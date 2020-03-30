@@ -56,6 +56,9 @@ if not app.debug:
     app.logger.addHandler(file_handler)
 
 
+@app.route('')
+def index():
+    return '<h1>index<h1>'
 
 # hdfs client
 # hdfs_client = hdfs.Client("http://116.62.177.146:50070")
