@@ -56,7 +56,7 @@ if not app.debug:
     app.logger.addHandler(file_handler)
 
 
-@app.route('')
+@app.route('/')
 def index():
     return '<h1>index<h1>'
 
