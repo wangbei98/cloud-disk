@@ -24,19 +24,6 @@ UPLOAD_FOLDER = config['UPLOAD_FOLDER']
 CHUNK_SIZE = config['CHUNK_SIZE']
 
 class UploadAPI(Resource):
-	file_fields={
-		'id':fields.Integer,
-		'filename':fields.String,
-		'path_root':fields.String,
-		'parent_id':fields.Integer,
-		'type_of_node':fields.String,
-		'size':fields.Integer,
-		'upload_time':fields.Integer,
-		'user_id':fields.Integer
-	}
-	@marshal_with(file_fields)
-	def serialize_file(self,file):
-		return file
 
 	@login_required
 	def post(self):
@@ -88,25 +75,12 @@ class UploadAPI(Resource):
 				db.session.add(filenode)
 				# print('db added filenode')
 				db.session.commit()
-				response = make_response(jsonify(code=0,message='OK',data = {'file':self.serialize_file(filenode)}))
+				response = make_response(jsonify(code=0,message='OK',data = {'file':filenode.to_json()}))
 				return response
 			except:
 				response = make_response(jsonify(code=12,message='node already exist , add fail'))
 				return response
 class GetInfoAPI(Resource):
-	file_fields={
-		'id':fields.Integer,
-		'filename':fields.String,
-		'path_root':fields.String,
-		'parent_id':fields.Integer,
-		'type_of_node':fields.String,
-		'size':fields.Integer,
-		'upload_time':fields.Integer,
-		'user_id':fields.Integer
-	}
-	@marshal_with(file_fields)
-	def serialize_file(self,file):
-		return file
 	@login_required
 	def get(self):
 		parse = reqparse.RequestParser()
@@ -130,7 +104,7 @@ class GetInfoAPI(Resource):
 			response = make_response(jsonify(code=25,message='can not access this file'))
 			return response
 		# 获取信息
-		response = make_response(jsonify(code=0,data = {'file':self.serialize_file(file_node),'num_of_children':num_of_children} ))
+		response = make_response(jsonify(code=0,data = {'file':filenode.to_json(),'num_of_children':num_of_children} ))
 		return  response
 class DownloadFileAPI(Resource):
 	def generate(self,path):
@@ -259,19 +233,6 @@ class ReNameAPI(Resource):
 		else:# 如果修改的是文件
 			return self.reNameFile(target_file_node,new_name)
 class NewFolderAPI(Resource):
-	file_fields={
-		'id':fields.Integer,
-		'filename':fields.String,
-		'path_root':fields.String,
-		'parent_id':fields.Integer,
-		'type_of_node':fields.String,
-		'size':fields.Integer,
-		'upload_time':fields.Integer,
-		'user_id':fields.Integer
-	}
-	@marshal_with(file_fields)
-	def serialize_file(self,file):
-		return file
 	@login_required
 	def post(self):
 		parse = reqparse.RequestParser()
@@ -299,25 +260,12 @@ class NewFolderAPI(Resource):
 			filenode = FileNode(filename=filename,path_root = new_path_root,parent_id = cur_file_id,upload_time = d_time,user_id = current_user.uid)
 			db.session.add(filenode)
 			db.session.commit()
-			response = make_response(jsonify(code=0,message='OK',data = {'file':self.serialize_file(filenode)}))
+			response = make_response(jsonify(code=0,message='OK',data = {'file':filenode.to_json()}))
 			return response
 		except:
 			response = make_response(jsonify(code = 12,message='node already exist , add fail'))
 			return response
 class GetAllAPI(Resource):
-	file_fields={
-		'id':fields.Integer,
-		'filename':fields.String,
-		'path_root':fields.String,
-		'parent_id':fields.Integer,
-		'type_of_node':fields.String,
-		'size':fields.Integer,
-		'upload_time':fields.Integer,
-		'user_id':fields.Integer
-	}
-	@marshal_with(file_fields)
-	def serialize_file(self,file):
-		return file
 
 	@login_required
 	def get(self):
@@ -329,7 +277,7 @@ class GetAllAPI(Resource):
 		try:
 			# file_nodes = FileNode.query.filter_by(user_id=cur_uid)
 			file_nodes = current_user.files
-			response = make_response(jsonify(code = 0,data={'files':[ self.serialize_file(file) for file in file_nodes]}))
+			response = make_response(jsonify(code = 0,data={'files':[ file.to_json() for file in file_nodes]}))
 			return response
 		except :
 			response = make_response(jsonify(code=10,message='database error'))
@@ -459,6 +407,11 @@ class PreviewAPI(Resource):
 			response = make_response(jsonify(code = 24,message='preview not allowed'))
 			return response
 
+'''
+文件分享
+'''
 
+class ShareAPI(Resource):
+	pass
 
 

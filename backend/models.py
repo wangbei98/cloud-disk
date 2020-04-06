@@ -20,10 +20,31 @@ class FileNode(db.Model):
     # 所属用户
     user_id = db.Column(db.Integer,db.ForeignKey('UserTable.uid'))
 
+    is_share = db.Column(db.Boolean, default=False)
 
     # hdfs 相关
     hdfs_path = db.Column(db.String(50))
     hdfs_filename = db.Column(db.String(100))
+
+    file_fields={
+        'id':fields.Integer,
+        'filename':fields.String,
+        'path_root':fields.String,
+        'parent_id':fields.Integer,
+        'type_of_node':fields.String,
+        'size':fields.Integer,
+        'upload_time':fields.Integer,
+        'user_id':fields.Integer
+    }
+    @marshal_with(file_fields)
+    def to_json(self):
+        return self
+
+class ShareTable(db.Model):
+    share_id = db.Column(db.Integer,primary_key=True, autoincrement=True)
+    file_id = db.Column(db.Integer,nullable=False)
+    share_url = db.Column(db.String(100),nullable=False)
+    share_token = db.Column(db.String(20),default='')
 
 class UserTable(UserMixin,db.Model):
     __tablename__ = 'UserTable'
