@@ -12,7 +12,7 @@ from flask_restful import Api,Resource,fields,marshal_with,marshal_with_field,re
 from flask_login import LoginManager,UserMixin,login_user, logout_user, current_user, login_required
 from models import FileNode,UserTable
 from extensions import db,login_manager
-from utils import generate_token,verify_token,token_required
+from utils import generate_token,verify_token,token_required,generate_file_name
 from werkzeug.datastructures import FileStorage
 from settings import config
 from flask import send_file,make_response,send_from_directory,stream_with_context
@@ -460,14 +460,5 @@ class PreviewAPI(Resource):
 			return response
 
 
-# 辅助函数
-# 删除结点
-
-# utils
-# 处理文件名
-import hashlib
-def generate_file_name(parent_id,filename):
-	return hashlib.md5(
-				(str(parent_id) + '_' + filename).encode('utf-8')).hexdigest()
 
 

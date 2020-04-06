@@ -7,6 +7,13 @@ from models import UserTable
 
 import functools
 
+# utils
+# 处理文件名
+import hashlib
+def generate_file_name(parent_id,filename):
+	return hashlib.md5(
+				(str(parent_id) + '_' + filename).encode('utf-8')).hexdigest()
+
 
 # 根据用户id生成token
 def generate_token(uid):

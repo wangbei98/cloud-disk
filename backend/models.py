@@ -20,6 +20,7 @@ class FileNode(db.Model):
     # 所属用户
     user_id = db.Column(db.Integer,db.ForeignKey('UserTable.uid'))
 
+
     # hdfs 相关
     hdfs_path = db.Column(db.String(50))
     hdfs_filename = db.Column(db.String(100))
