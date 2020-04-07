@@ -10,7 +10,7 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_restful import Api,Resource,fields,marshal_with,marshal_with_field,reqparse
 from flask_login import LoginManager,UserMixin,login_user, logout_user, current_user, login_required
-from models import FileNode,UserTable
+from models import FileNode,UserTable,ShareTable
 from extensions import db,login_manager
 from utils import generate_token,verify_token,token_required,generate_file_name
 from werkzeug.datastructures import FileStorage
@@ -18,7 +18,8 @@ from settings import config
 from flask import send_file,make_response,send_from_directory,stream_with_context
 from PIL import Image
 import io
-
+from utils import generate_share_token,generate_url
+from flask import session
 
 UPLOAD_FOLDER = config['UPLOAD_FOLDER']
 CHUNK_SIZE = config['CHUNK_SIZE']
@@ -412,6 +413,147 @@ class PreviewAPI(Resource):
 '''
 
 class ShareAPI(Resource):
-	pass
+	@login_required
+	def post(self):
+		parse = reqparse.RequestParser()
+		parse.add_argument('id',type=int,help='错误的id',default='0')
+		parse.add_argument('token_required',type=int,default='0')
+		parse.add_argument('day',type=int,default=1095)
+		args = parse.parse_args()
+		file_id = args.get('id')
+		token_required = args.get('token_required')
+		day = args.get('day')
+		fileobj = FileNode.query.filter_by(id=file_id, user_id=current_user.uid).first()
+		if fileobj is None:
+			response = make_response(jsonify(code = 11,message='node not exist, query fail'))
+			return response
+		if fileobj.is_share == False:
+			fileobj.is_share=True
+		share_url = generate_url()
+		if token_required == 1:
+			share_token = generate_share_token()
+		else:
+			share_token = ''
+		shareobj = ShareTable(file_id = file_id,share_url = share_url,share_token = share_token,share_begin_time=int(time.time()),share_end_time = int(time.time()) + day*24*3600)
+		try:
+			db.session.add(shareobj)
+			db.session.commit()
+			response = make_response(jsonify(code=0,message='OK',data = {'share':shareobj.to_json()}))
+			return response
+		except Exception as e:
+			# app.logger.exception(e)
+			response = make_response(jsonify(code=12,message='node already exist , add fail'))
+			return response
+
+class CancelShareAPI(Resource):
+	@login_required
+	def post(self):
+		parse = reqparse.RequestParser()
+		parse.add_argument('share_id',type=int,help='错误的share_id',default='0')
+		args = parse.parse_args()
+		share_id = args.get('share_id')
+		try:
+			shareobj = ShareTable.query.get(share_id)
+			file_id = shareobj.file_id
+			db.session.delete(shareobj)
+			fileobj = FileNode.query.get(file_id)
+			print(len(fileobj.shares))
+			if len(fileobj.shares) == 0:
+				fileobj.is_share=False
+			db.session.commit()
+			response = make_response(jsonify(code=0,message = 'OK'))
+			return response
+		except:
+			response = make_response(jsonify(code=10,message = 'database error'))
+			return response
+class DownloadShareAPI(Resource):
+	def post(self,url):
+		parse = reqparse.RequestParser()
+		parse.add_argument('share_token',type=str,default='')
+		args = parse.parse_args()
+		# 获取当前文件夹id
+		share_token = args.get('share_token')
+
+		shareobj = ShareTable.query.filter_by(share_url=url).first()
+		if shareobj is None:
+			response = make_response(jsonify(code = 11,message='node not exist, query fail'))
+			return response
+		file_node = FileNode.query.filter_by(id = shareobj.file_id).first()
+		if file_node is None:
+			response = make_response(jsonify(code = 11,message='node not exist, query fail'))
+			return response
+		if shareobj.share_token == '' or share_token == shareobj.share_token:
+			if shareobj.share_end_time < int(time.time()):
+				print(shareobj.share_end_time)
+				print(int(time.time()))
+				response = make_response(jsonify(code=42,message='out of date'))
+				return response
+			parent_id = file_node.parent_id
+			filename = file_node.filename
+				# 生成文件名的 hash
+			actual_filename = generate_file_name(parent_id, filename)
+				# 结合 UPLOAD_FOLDER 得到最终文件的存储路径
+			target_file = os.path.join(os.path.expanduser(UPLOAD_FOLDER), actual_filename)
+			if os.path.exists(target_file):
+				return send_file(target_file,as_attachment=True,attachment_filename=filename,cache_timeout=3600)
+			else:
+				response = make_response(jsonify(code=22,message='file not exist'))
+				return response
+		else:
+			response = make_response(jsonify(code=41,message='wrong share_token'))
+			return response
+
+class PreviewShareAPI(Resource):
+	def post(self,url):
+		parse = reqparse.RequestParser()
+		parse.add_argument('width',type=int,help='wrong width',default=300)
+		parse.add_argument('height',type=int,help='wrong height',default=300)
+		parse.add_argument('share_token',type=str,default='')
+		args = parse.parse_args()
+		# 获取当前文件夹id
+		width = args.get('width')
+		height = args.get('height')
+		share_token = args.get('share_token')
+
+		shareobj = ShareTable.query.filter_by(share_url=url).first_or_404()
+		file_node = FileNode.query.filter_by(id = shareobj.file_id).first_or_404()
+		if shareobj.share_token == '' or share_token == shareobj.share_token:
+			if shareobj.share_end_time < int(time.time()):
+				response = make_response(jsonify(code=42,message='out of date'))
+				return response
+			if file_node.type_of_node in config['IMG_TYPE']:
+				parent_id = file_node.parent_id
+				filename = file_node.filename
+				node_type = file_node.type_of_node
+					# 生成文件名的 hash
+				actual_filename = generate_file_name(parent_id, filename)
+					# 结合 UPLOAD_FOLDER 得到最终文件的存储路径
+				target_file = os.path.join(os.path.expanduser(UPLOAD_FOLDER), actual_filename)
+				if os.path.exists(target_file):
+					try:
+						with Image.open(target_file,mode='r') as img_data:
+						# img_data = Image.open(target_file)
+							img_data.thumbnail((width,height))
+
+							fp = io.BytesIO()
+							format = Image.registered_extensions()['.'+node_type]
+							img_data.save(fp, format)
+
+							response = make_response(fp.getvalue())
+							response.headers['Content-Type'] = 'image/' + node_type
+							return response
+					except:
+						response = make_response(jsonify(code = 24,message='preview not allowed'))
+						return response
+				else:
+					response = make_response(jsonify(code=22,message='file not exist'))
+					return response
+			else:
+				response = make_response(jsonify(code = 24,message='preview not allowed'))
+				return response
+		else:
+			response = make_response(jsonify(code=41,message='wrong share_token'))
+			return response
+
 
 

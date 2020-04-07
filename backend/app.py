@@ -17,6 +17,7 @@ from flask_login import LoginManager,UserMixin,login_user, logout_user, current_
 from extensions import db,login_manager
 from APIS.auth import Login,Register,Logout,GetCurUserAPI,RefreshTokenAPI
 from APIS.resources import UploadAPI,GetInfoAPI,DownloadFileAPI,ReNameAPI,NewFolderAPI,GetAllAPI,DeleteAPI,PreviewAPI
+from APIS.resources import ShareAPI,CancelShareAPI,DownloadShareAPI,PreviewShareAPI
 from models import UserTable,FileNode
 from settings import config
 import logging
@@ -114,5 +115,12 @@ api.add_resource(NewFolderAPI,'/api/file/newFolder',endpoint='newFolder')
 api.add_resource(GetAllAPI,'/api/file/all',endpoint='all')
 api.add_resource(DeleteAPI,'/api/file/delete',endpoint='delete')
 api.add_resource(PreviewAPI,'/api/file/preview',endpoint='preview')
+
+api.add_resource(ShareAPI,'/api/file/share',endpoint='share')
+api.add_resource(CancelShareAPI,'/api/file/share/cancel',endpoint='cancel')
+
+api.add_resource(DownloadShareAPI,'/api/file/share/download/<url>',endpoint='downloadshare')
+api.add_resource(PreviewShareAPI,'/api/file/share/preview/<url>',endpoint='previewshare')
+
 if __name__ == '__main__':
 	app.run()

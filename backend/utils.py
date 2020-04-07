@@ -86,5 +86,5 @@ def get_random_short_int():
     return _random.randint(100000, 999999)
 
 
-def generate_password():
+def generate_share_token():
     return base36_encode(get_random_short_int())
