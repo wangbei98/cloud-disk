@@ -515,8 +515,14 @@ class PreviewShareAPI(Resource):
 		height = args.get('height')
 		share_token = args.get('share_token')
 
-		shareobj = ShareTable.query.filter_by(share_url=url).first_or_404()
-		file_node = FileNode.query.filter_by(id = shareobj.file_id).first_or_404()
+		shareobj = ShareTable.query.filter_by(share_url=url).first()
+		if shareobj is None:
+			response = make_response(jsonify(code = 11,message='node not exist, query fail'))
+			return response
+		file_node = FileNode.query.filter_by(id = shareobj.file_id).first()
+		if file_node is None:
+			response = make_response(jsonify(code = 11,message='node not exist, query fail'))
+			return response
 		if shareobj.share_token == '' or share_token == shareobj.share_token:
 			if shareobj.share_end_time < int(time.time()):
 				response = make_response(jsonify(code=42,message='out of date'))
