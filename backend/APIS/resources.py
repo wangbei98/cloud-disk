@@ -467,7 +467,7 @@ class CancelShareAPI(Resource):
 			response = make_response(jsonify(code=10,message = 'database error'))
 			return response
 class DownloadShareAPI(Resource):
-	def post(self,url):
+	def get(self,url):
 		parse = reqparse.RequestParser()
 		parse.add_argument('share_token',type=str,default='')
 		args = parse.parse_args()
@@ -504,7 +504,7 @@ class DownloadShareAPI(Resource):
 			return response
 
 class PreviewShareAPI(Resource):
-	def post(self,url):
+	def get(self,url):
 		parse = reqparse.RequestParser()
 		parse.add_argument('width',type=int,help='wrong width',default=300)
 		parse.add_argument('height',type=int,help='wrong height',default=300)
