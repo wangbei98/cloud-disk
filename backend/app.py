@@ -18,6 +18,7 @@ from extensions import db,login_manager
 from APIS.auth import Login,Register,Logout,GetCurUserAPI,RefreshTokenAPI
 from APIS.resources import UploadAPI,GetInfoAPI,DownloadFileAPI,ReNameAPI,NewFolderAPI,GetAllAPI,DeleteAPI,PreviewAPI
 from APIS.resources import ShareAPI,CancelShareAPI,DownloadShareAPI,PreviewShareAPI
+from APIS.resources import ShareInfoAPI
 from models import UserTable,FileNode
 from settings import config
 import logging
@@ -121,6 +122,7 @@ api.add_resource(CancelShareAPI,'/api/file/share/cancel',endpoint='cancel')
 
 api.add_resource(DownloadShareAPI,'/api/file/share/download/<url>',endpoint='downloadshare')
 api.add_resource(PreviewShareAPI,'/api/file/share/preview/<url>',endpoint='previewshare')
+api.add_resource(ShareInfoAPI,'/api/file/share/info/<url>',endpoint='shareinfo')
 
 if __name__ == '__main__':
 	app.run()

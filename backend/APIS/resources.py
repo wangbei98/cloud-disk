@@ -562,4 +562,25 @@ class PreviewShareAPI(Resource):
 			return response
 
 
+class ShareInfoAPI(Resource):
+	# 获取当前分享文件的信息
+	def get(self,url):
+		parse = reqparse.RequestParser()
+		args = parse.parse_args()
+		# 获取这个share对象
+		shareobj = ShareTable.query.filter_by(share_url=url).first()
+		if shareobj is None:
+			response = make_response(jsonify(code = 11,message='node not exist, query fail'))
+			return response
+		if shareobj.share_end_time < int(time.time()):
+			response = make_response(jsonify(code=42,message='out of date'))
+			return response
+		# 获取对应的filenode
+		file_node = FileNode.query.filter_by(id = shareobj.file_id).first()
+		if file_node is None:
+			response = make_response(jsonify(code = 11,message='node not exist, query fail'))
+			return response
+		else:
+			response = make_response(jsonify(code=0,message='OK',data={'file':file_node.to_json()}))
+			return response
 
