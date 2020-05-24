@@ -30,9 +30,9 @@
               <el-menu-item @click='goVideos'>
                 <i class="el-icon-video-camera-solid"></i>
                 视频</el-menu-item>
-              <el-menu-item @click='goTrash'>
+              <!-- <el-menu-item @click='goTrash'>
                 <i class="el-icon-files"></i>
-                回收站</el-menu-item>
+                回收站</el-menu-item> -->
               <el-menu-item @click='goDemo'>
                 <i class="el-icon-files"></i>
                 demo</el-menu-item>
