@@ -24,6 +24,10 @@ Vue.use(ElementUI);
 
 import {store} from './store/store.js'
 
+
+import AxiosPlugin from 'vue-axios-cors';
+Vue.use(AxiosPlugin)
+
 // Install BootstrapVue
 Vue.use(BootstrapVue)
 // Optionally install the BootstrapVue icon components plugin

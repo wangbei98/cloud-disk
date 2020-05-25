@@ -5,9 +5,9 @@ import axios from 'axios'
 Vue.use(Vuex);
 
 //生产环境
-// axios.defaults.baseURL = 'http://116.62.177.146/api'
+axios.defaults.baseURL = 'http://116.62.177.146/api'
 //开发环境
-axios.defaults.baseURL = '/api'
+// axios.defaults.baseURL = '/api'
 
 
 // Vue.use(axios)
