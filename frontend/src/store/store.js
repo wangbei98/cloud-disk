@@ -3,7 +3,12 @@ import Vuex from 'vuex'
 import axios from 'axios'
 
 Vue.use(Vuex);
-axios.defaults.baseURL = 'http://116.62.177.146/api'
+
+//生产环境
+// axios.defaults.baseURL = 'http://116.62.177.146/api'
+//开发环境
+axios.defaults.baseURL = '/api'
+
 
 // Vue.use(axios)
 // Vue.prototype.$ajax = axios
