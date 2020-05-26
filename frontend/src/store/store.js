@@ -6,6 +6,11 @@ Vue.use(Vuex);
 
 //生产环境
 axios.defaults.baseURL = 'http://116.62.177.146/api'
+//支持跨域cookie
+// axios.defaults.withCredentials = true
+// axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+
+
 //开发环境
 // axios.defaults.baseURL = '/api'
 
@@ -182,6 +187,8 @@ export const store = new Vuex.Store({
       return new Promise((resolve,reject) => {
         axios.get('/file/all')
         .then(response=>{
+          console.log('action: get all files')
+          console.log(response)
           const files = response.data.data.files
           context.commit('refreshFiles',files)
           resolve(response)
