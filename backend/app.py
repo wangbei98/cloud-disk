@@ -56,6 +56,8 @@ config = {
     'http://127.0.0.1:8080',  # React
     'http://localhost:5000',  # React
     'http://127.0.0.1:5000',
+    'http://localhost:8081',  # React
+    'http://127.0.0.1:8081',
   ],
 
   'SECRET_KEY': '...'

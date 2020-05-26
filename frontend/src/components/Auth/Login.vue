@@ -81,12 +81,13 @@
           email:this.form.email,
           password:this.form.password
         }).then(response => {
+          console.log(response)
+          const token = response.data.data.token
           this.$store.dispatch('saveToken',token)
           // 如果登录成功，则跳转到文件页
           this.$router.push('/home/files/-1')
-
-          const token = this.$cookie.get('token')
-          this.$store.dispatch('saveToken',token)
+          // const token = this.$cookie.get('token')
+          // this.$store.dispatch('saveToken',token)
 
           //拉取所有文件信息
           this.$store.dispatch('getAllFiles')

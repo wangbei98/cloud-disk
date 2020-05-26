@@ -50,7 +50,7 @@ class Login(Resource):
 			token = generate_token(current_user.uid)
 			print('current_user')
 			print(current_user)
-			response = jsonify(code = 0,message = 'login success',data ={'user': self.serialize_user(user)})
+			response = jsonify(code = 0,message = 'login success',data ={'user': self.serialize_user(user),'token':token})
 			response.set_cookie('token',token)
 			return response
 		else:

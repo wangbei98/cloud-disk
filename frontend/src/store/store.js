@@ -5,9 +5,11 @@ import axios from 'axios'
 Vue.use(Vuex);
 
 //生产环境
-axios.defaults.baseURL = 'http://116.62.177.146/api'
+// axios.defaults.baseURL = 'http://127.0.0.1:5001/api'
+// 服务器用的是Gunicorn，端口是8000
+axios.defaults.baseURL = 'http://127.0.0.1:8000/api'
 //支持跨域cookie
-// axios.defaults.withCredentials = true
+axios.defaults.withCredentials = true
 // axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
 
@@ -63,7 +65,8 @@ export const store = new Vuex.Store({
       return state.token
     },
     targetHost(state){
-      return 'http://116.62.177.146'
+      return 'http://127.0.0.1:8000'
+      // return 'http://116.62.177.146'
     }
   },
   mutations:{
@@ -138,6 +141,7 @@ export const store = new Vuex.Store({
         }).then(response => {
           console.log(response)
           const email = response.data.data.user.email
+
           context.commit('refreshEmail',email)
           localStorage.setItem('email',email)
           resolve(response)
@@ -154,12 +158,14 @@ export const store = new Vuex.Store({
           .then(response => {
             localStorage.removeItem('email')
             context.commit('deleteEmail')
-            context.commit('deleteToken')
             localStorage.removeItem('token')
+            context.commit('deleteToken')
             resolve(response)
           }).catch(err => {
             localStorage.removeItem('email')
             context.commit('deleteEmail')
+            localStorage.removeItem('token')
+            context.commit('deleteToken')
             reject(err)
           })
         })
