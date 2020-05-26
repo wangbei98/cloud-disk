@@ -54,6 +54,8 @@ config = {
   'ORIGINS': [
     'http://localhost:8080',  # React
     'http://127.0.0.1:8080',  # React
+    'http://localhost:5000',  # React
+    'http://127.0.0.1:5000',
   ],
 
   'SECRET_KEY': '...'
