@@ -17,6 +17,7 @@ import Filter from '../components/Page/Filter.vue'
 Vue.use(Router)
 
 export default new Router({
+	mode: 'history',
   routes: [
     {
         path: '/',
