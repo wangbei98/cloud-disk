@@ -25,6 +25,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 from flask_cors import CORS
+from flask import request
 
 # SQLite URI compatiblec
 WIN = sys.platform.startswith('win')
@@ -49,8 +50,16 @@ login = LoginManager(app)
 db.init_app(app)
 login_manager.init_app(app)
 
-CORS(app)
+config = {
+  'ORIGINS': [
+    'http://localhost:8080',  # React
+    'http://127.0.0.1:8080',  # React
+  ],
 
+  'SECRET_KEY': '...'
+}
+# CORS(app,resources={r"/api/*": {"origins": config['ORIGINS']}},support_credentials=True)
+CORS(app, resources={ r'/api/*': {'origins': config['ORIGINS']}}, supports_credentials=True)
 # logging
 app.logger.setLevel(logging.INFO)
 formatter = logging.Formatter('%(astime)s - %(name)s - %(levelname)s - %(message)s ')
