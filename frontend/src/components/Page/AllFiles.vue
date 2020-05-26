@@ -424,7 +424,8 @@
       },
       // 补全share_url
       URLFormatter(row,col){
-        return this.$store.getters.targetHost + '/#/share/' + row.share_url
+        // return this.$store.getters.targetHost + '/#/share/' + row.share_url
+        return 'http://bytescloud.cn' + '/share/' + row.share_url
       }
     }
   }

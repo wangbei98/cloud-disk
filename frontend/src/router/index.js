@@ -13,12 +13,13 @@ import FileContainer from '../components/Page/FileContainer.vue'
 // import Videos from '../components/Page/Videos.vue'
 import AllFiles from '../components/Page/AllFiles.vue'
 import Filter from '../components/Page/Filter.vue'
-
+import NotFoundComponent from '../components/Page/NotFoundComponent.vue'
 Vue.use(Router)
 
 export default new Router({
 	mode: 'history',
   routes: [
+    { path: '*', component: NotFoundComponent },
     {
         path: '/',
         redirect: '/home/files/-1'
