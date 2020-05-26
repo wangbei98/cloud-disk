@@ -24,6 +24,7 @@ from settings import config
 import logging
 from logging.handlers import RotatingFileHandler
 
+from flask_cors import CORS
 
 # SQLite URI compatiblec
 WIN = sys.platform.startswith('win')
@@ -47,6 +48,8 @@ api = Api(app)
 login = LoginManager(app)
 db.init_app(app)
 login_manager.init_app(app)
+
+CORS(app)
 
 # logging
 app.logger.setLevel(logging.INFO)
