@@ -16,4 +16,4 @@ cloud disk
 
 ### web端demo
 
-[bytescloud](bytescloud.cn)
+[bytescloud](http://bytescloud.cn)
