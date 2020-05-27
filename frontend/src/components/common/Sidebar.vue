@@ -60,6 +60,7 @@
         methods:{
           goAllFiles(){
             this.$router.push('/home/files')
+            this.$store.dispatch('clearCurPathItems')
           },
           goDocs(){
             this.$router.push('/home/doc')

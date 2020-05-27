@@ -10,6 +10,8 @@ Vue.use(Vuex);
 axios.defaults.baseURL = 'http://127.0.0.1:8000/api'
 //支持跨域cookie
 axios.defaults.withCredentials = true
+
+
 // axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
 
@@ -114,6 +116,18 @@ export const store = new Vuex.Store({
         state.curPathItems.push(newPathItem)
       }
     },
+    clearCurPathItems(state){
+      state.curPathItems = [
+        {
+          text:'/root',
+          to:{
+            name:'FileContainer',
+            path:'/home/files/-1',
+            id:'-1'
+          }
+        },
+      ]
+    }
     // checkAll(state,data){
     //   if(data.checked){//如果全选
     //     state.remainingCount = 0
@@ -362,6 +376,9 @@ export const store = new Vuex.Store({
           reject(err)
         })
       })
+    },
+    clearCurPathItems(context){
+      context.commit('clearCurPathItems')
     }
   }
 })
