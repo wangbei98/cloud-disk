@@ -7,8 +7,8 @@
          router：是否使用 vue-router 的模式，启用该模式会在激活导航时以 index 作为 path 进行路由跳转，默认值为false； -->
         <el-menu
             class="sidebar-el-menu"
-            background-color="#324157"
-            text-color="#bfcbd9"
+            background-color="#ffffff"
+            text-color="#2f3542"
             active-text-color="#20a0ff"
             unique-opened
         >
@@ -40,7 +40,7 @@
                 <el-progress type="circle" :percentage="20"></el-progress>
                 容量：2G/10G
               </el-menu-item> -->
-              
+
             </el-menu-item-group>
         </el-menu>
     </div>
@@ -93,6 +93,8 @@
         top: 70px;
         bottom: 0;
         overflow-y: scroll;
+        background-color: #74b9ff;
+        color: #0000FF;
     }
     .sidebar::-webkit-scrollbar {
         width: 0;

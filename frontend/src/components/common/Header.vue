@@ -4,8 +4,9 @@
         <!-- 折叠按钮 -->
         <div class="collapse-btn" @click="collapseChage">
             <!-- 通过v-if和v-else来判定侧边栏打开状态 -->
-            <i v-if="!collapse" class="el-icon-s-fold"></i>
-            <i v-else class="el-icon-s-unfold"></i>
+            <!-- <i v-if="!collapse" class="el-icon-s-fold"></i>
+            <i v-else class="el-icon-s-unfold"></i> -->
+          <i class="el-icon-cloudy"></i>
         </div>
         <div class="logo">BytesCloud</div>
         <div class="header-right">
@@ -24,7 +25,7 @@
                 <!-- 用户名下拉菜单：trigger属性配置 click 激活 -->
                 <el-dropdown v-if="loggedIn"
                     class="user-name" trigger="click" @command="handleCommand">
-                    <span class="el-dropdown-link">
+                    <span class="el-dropdown-link" style="color:  #2f3542;">
                         {{curEmail}}
                         <i class="el-icon-caret-bottom"></i>
                     </span>
@@ -163,7 +164,9 @@
         width: 100%;
         height: 70px;
         font-size: 22px;
-        color: #fff;
+        color: #2f3542;
+        background-color: #f5f6fa;
+        /* color: #78e08f; */
     }
     .collapse-btn {
         float: left;
