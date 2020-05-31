@@ -19,7 +19,7 @@
                     </el-tooltip>
                 </div>
                 <!-- 用户头像 -->
-                <div class="user-avator">
+                <div v-if="loggedIn" class="user-avator">
                     <img src="../../assets/img/img.jpg" />
                 </div>
                 <!-- 用户名下拉菜单：trigger属性配置 click 激活 -->
@@ -39,7 +39,7 @@
                 </el-dropdown>
                 <el-dropdown v-else
                     class="user-name" trigger="click" @command="handleCommand">
-                    <span class="el-dropdown-link">
+                    <span class="el-dropdown-link" style="color:  #2f3542;">
                         注册/登录
                         <i class="el-icon-caret-bottom"></i>
                     </span>
