@@ -24,6 +24,7 @@ class Login(Resource):
 	def serialize_user(self,user):
 		return user
 	def post(self):
+		logout_user()
 		if current_user.is_authenticated:
 			# TODO
 			response = make_response(jsonify(code=32,message = 'already authenticated'))
