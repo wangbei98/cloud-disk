@@ -58,7 +58,8 @@ config = {
     'http://127.0.0.1:5000',
     'http://localhost:8081',  # React
     'http://127.0.0.1:8081',
-    'http://bytescloud.cn'
+    'http://bytescloud.cn',
+    'http:localhost'
   ],
 
   'SECRET_KEY': '...'
